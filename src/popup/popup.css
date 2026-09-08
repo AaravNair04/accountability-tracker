@@ -1,0 +1,131 @@
+/* Popup container */
+body {
+  width: 280px;
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #ffffff;
+  color: #222222;
+}
+
+
+/* Extension title */
+h2 {
+  margin: 0 0 20px;
+  font-size: 18px;
+}
+
+
+/* Status row */
+.status-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 14px;
+}
+
+
+/* Status label */
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555555;
+}
+
+
+/* Status value */
+.status-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
+#deviceStatus,
+#trackingStatus,
+#backendStatus {
+  font-size: 13px;
+}
+
+
+/* Status indicator */
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #888888;
+}
+
+
+/* Tracking active */
+.status-dot.active {
+  background: #2e9d50;
+}
+
+
+/* Tracking paused */
+.status-dot.paused {
+  background: #d97706;
+}
+
+
+/* Backend connected */
+.status-dot.connected {
+  background: #2e9d50;
+}
+
+
+/* Backend unavailable */
+.status-dot.offline {
+  background: #c43d3d;
+}
+
+
+/* Sync information */
+.sync-message {
+  min-height: 16px;
+  margin: 4px 0 14px;
+
+  font-size: 11px;
+  line-height: 1.4;
+
+  color: #666666;
+}
+
+
+/* Pause / Resume button */
+#trackingToggle {
+  width: 100%;
+
+  margin-top: 6px;
+
+  padding: 10px 14px;
+
+  border: none;
+  border-radius: 6px;
+
+  background: #222222;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+#trackingToggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+
+#trackingToggle:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+
+#trackingToggle:not(:disabled):active {
+  transform: scale(0.98);
+}

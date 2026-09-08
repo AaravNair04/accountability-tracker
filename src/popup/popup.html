@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+
+  <title>
+    Accountability Tracker
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="./popup.css"
+  />
+</head>
+
+<body>
+
+  <h2>
+    Accountability Tracker
+  </h2>
+
+
+  <!-- DEVICE STATUS -->
+
+  <div class="status-section">
+
+    <span class="label">
+      Device
+    </span>
+
+    <span id="deviceStatus">
+      Checking...
+    </span>
+
+  </div>
+
+
+  <!-- DEVICE LINK / RELINK -->
+
+  <button
+    id="linkDeviceButton"
+    type="button"
+    style="display: none;"
+  >
+    Link Device
+  </button>
+
+
+  <!-- TRACKING STATUS -->
+
+  <div class="status-section">
+
+    <span class="label">
+      Tracking
+    </span>
+
+    <div class="status-value">
+
+      <span
+        id="trackingDot"
+        class="status-dot"
+      ></span>
+
+      <span id="trackingStatus">
+        Checking...
+      </span>
+
+    </div>
+
+  </div>
+
+
+  <!-- BACKEND STATUS -->
+
+  <div class="status-section">
+
+    <span class="label">
+      Sync
+    </span>
+
+    <div class="status-value">
+
+      <span
+        id="backendDot"
+        class="status-dot"
+      ></span>
+
+      <span id="backendStatus">
+        Checking...
+      </span>
+
+    </div>
+
+  </div>
+
+
+  <!-- SYNC MESSAGE -->
+
+  <p
+    id="syncMessage"
+    class="sync-message"
+  ></p>
+
+
+  <!-- PAUSE / RESUME -->
+
+  <button
+    id="trackingToggle"
+    type="button"
+  >
+    Loading...
+  </button>
+
+
+  <script
+    type="module"
+    src="../../dist/popup/popup.js"
+  ></script>
+
+</body>
+</html>
