@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String           @id
+  email             String           @unique
+  createdAt         DateTime         @default(now())
+  timezone          String           @default("Asia/Kolkata")
+  dailyReports      DailyReport[]
+  devices           Device[]
+  reportDeliveries  ReportDelivery[] @relation("ReportDeliveryPeer")
+  reportResponses   ReportResponse[] @relation("ReportResponsePeer")
+  peerRelationships TrustedPeer[]    @relation("PeerOwner")
+  accountabilityFor TrustedPeer[]    @relation("AccountabilityPeer")
+  sessions          UsageSession[]
+
+  @@map("users")
+}
+
+model Device {
+  id               String          @id @default(cuid())
+  name             String
+  createdAt        DateTime        @default(now())
+  confirmedAt      DateTime?
+  userId           String
+  tokenHash        String          @unique
+  lastSeenAt       DateTime?
+  incognitoEnabled Boolean?
+  revokedAt        DateTime?
+  user             User            @relation(fields: [userId], references: [id])
+  trackingEvents   TrackingEvent[]
+  sessions         UsageSession[]
+
+  @@index([userId])
+  @@map("devices")
+}
+
+model UsageSession {
+  id              String   @id
+  site            String
+  type            String
+  startTime       DateTime
+  endTime         DateTime
+  durationSeconds Int
+  createdAt       DateTime @default(now())
+  userId          String?
+  deviceId        String?
+  device          Device?  @relation(fields: [deviceId], references: [id])
+  user            User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([deviceId])
+  @@map("usage_sessions")
+}
+
+model TrackingEvent {
+  id               String   @id @default(cuid())
+  type             String
+  createdAt        DateTime @default(now())
+  deviceId         String
+  incognitoEnabled Boolean?
+  device           Device   @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId])
+  @@index([createdAt])
+  @@map("tracking_events")
+}
+
+model TrustedPeer {
+  id        String   @id @default(cuid())
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ownerId   String
+  peerId    String
+  owner     User     @relation("PeerOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  peer      User     @relation("AccountabilityPeer", fields: [peerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, peerId])
+  @@index([ownerId])
+  @@index([peerId])
+  @@map("trusted_peers")
+}
+
+model DailyReport {
+  id                     String           @id @default(cuid())
+  reportDate             DateTime         @db.Date
+  createdAt              DateTime         @default(now())
+  totalSeconds           Int              @default(0)
+  activeSeconds          Int              @default(0)
+  backgroundAudioSeconds Int              @default(0)
+  goodSeconds            Int              @default(0)
+  limitedSeconds         Int              @default(0)
+  pausedSeconds          Int              @default(0)
+  unknownSeconds         Int              @default(0)
+  siteUsage              Json
+  userId                 String
+  timezone               String
+  user                   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries             ReportDelivery[]
+  responses              ReportResponse[]
+
+  @@unique([userId, reportDate])
+  @@index([userId])
+  @@index([reportDate])
+  @@map("daily_reports")
+}
+
+model ReportDelivery {
+  id        String      @id @default(cuid())
+  createdAt DateTime    @default(now())
+  viewedAt  DateTime?
+  reportId  String
+  peerId    String
+  peer      User        @relation("ReportDeliveryPeer", fields: [peerId], references: [id], onDelete: Cascade)
+  report    DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, peerId])
+  @@index([peerId])
+  @@index([reportId])
+  @@map("report_deliveries")
+}
+
+model ReportResponse {
+  id            String      @id @default(cuid())
+  message       String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  reportId      String
+  peerId        String
+  ownerViewedAt DateTime?
+  peer          User        @relation("ReportResponsePeer", fields: [peerId], references: [id], onDelete: Cascade)
+  report        DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, peerId])
+  @@index([reportId])
+  @@index([peerId])
+  @@map("report_responses")
+}
