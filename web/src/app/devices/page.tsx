@@ -1,8 +1,16 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import {
+  redirect
+} from "next/navigation";
+
+import {
+  prisma
+} from "@/lib/prisma";
+
+import {
+  createClient
+} from "@/lib/supabase/server";
 
 import RevokeDeviceButton from "./RevokeDeviceButton";
 
@@ -11,40 +19,33 @@ const DEVICE_STALE_MINUTES =
   30;
 
 
-// --------------------------------------------------
-// FORMAT LAST SEEN
-// --------------------------------------------------
-
 function formatRelativeTime(
   date: Date | null
 ) {
-
-  if (!date) {
+  if (
+    !date
+  ) {
     return "Never";
   }
-
-
-  const now =
-    Date.now();
-
 
   const differenceSeconds =
     Math.max(
       0,
       Math.floor(
         (
-          now -
+          Date.now() -
           date.getTime()
         ) /
         1000
       )
     );
 
-
-  if (differenceSeconds < 60) {
+  if (
+    differenceSeconds <
+    60
+  ) {
     return `${differenceSeconds}s ago`;
   }
-
 
   const minutes =
     Math.floor(
@@ -52,11 +53,12 @@ function formatRelativeTime(
       60
     );
 
-
-  if (minutes < 60) {
+  if (
+    minutes <
+    60
+  ) {
     return `${minutes}m ago`;
   }
-
 
   const hours =
     Math.floor(
@@ -64,32 +66,44 @@ function formatRelativeTime(
       60
     );
 
-
-  if (hours < 24) {
+  if (
+    hours <
+    24
+  ) {
     return `${hours}h ago`;
   }
 
-
-  const days =
-    Math.floor(
-      hours /
-      24
-    );
-
-
-  return `${days}d ago`;
+  return `${Math.floor(
+    hours /
+    24
+  )}d ago`;
 }
 
 
-// --------------------------------------------------
-// DEVICES PAGE
-// --------------------------------------------------
+function formatDateTime(
+  date: Date,
+  timeZone: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone,
+
+      dateStyle:
+        "medium",
+
+      timeStyle:
+        "medium"
+    }
+  ).format(
+    date
+  );
+}
+
 
 export default async function DevicesPage() {
-
   const supabase =
     await createClient();
-
 
   const {
     data: {
@@ -98,241 +112,232 @@ export default async function DevicesPage() {
   } =
     await supabase.auth.getUser();
 
-
-  if (!user) {
-    redirect("/auth");
+  if (
+    !user
+  ) {
+    redirect(
+      "/auth"
+    );
   }
 
+  const profile =
+    await prisma.user.findUnique({
+      where: {
+        id:
+          user.id
+      },
+
+      select: {
+        timezone:
+          true
+      }
+    });
+
+  const timeZone =
+    profile?.timezone ??
+    "Asia/Kolkata";
 
   const devices =
-  await prisma.device.findMany({
-    where: {
-      userId:
-        user.id,
+    await prisma.device.findMany({
+      where: {
+        userId:
+          user.id,
 
-      // Only show devices that successfully
-      // completed the extension linking process.
-      confirmedAt: {
-        not:
-          null
+        confirmedAt: {
+          not:
+            null
+        }
+      },
+
+      orderBy: {
+        lastSeenAt:
+          "desc"
       }
-    },
-
-    orderBy: {
-      lastSeenAt:
-        "desc"
-    }
-  });
-
+    });
 
   const now =
     Date.now();
 
-
   return (
     <main
       style={{
-        maxWidth: "800px",
-        margin: "0 auto",
-        padding: "40px 20px",
+        maxWidth:
+          "800px",
+
+        margin:
+          "0 auto",
+
+        padding:
+          "40px 20px",
+
         fontFamily:
           "Arial, sans-serif"
       }}
     >
-
       <Link href="/">
         ← Back to Dashboard
       </Link>
-
 
       <h1>
         Devices
       </h1>
 
-
       <p>
-        Browsers linked to your accountability account.
+        Confirmed browser extensions linked
+        to your accountability account.
       </p>
 
-
-      <hr
-        style={{
-          margin: "30px 0"
-        }}
-      />
-
-
       {
-        devices.length === 0
+        devices.length ===
+          0
           ? (
-
             <p>
-              No devices are linked yet.
+              No confirmed devices are linked yet.
             </p>
-
           )
           : (
+            devices.map(
+              (device) => {
+                const stale =
+                  !device.lastSeenAt ||
+                  (
+                    now -
+                    device.lastSeenAt.getTime()
+                  ) >
+                  (
+                    DEVICE_STALE_MINUTES *
+                    60 *
+                    1000
+                  );
 
-            <div>
+                const status =
+                  device.revokedAt
+                    ? "Revoked"
+                    : stale
+                      ? "Stale"
+                      : "Active";
 
-              {
-                devices.map(
-                  (device) => {
+                const incognitoStatus =
+                  device.incognitoEnabled ===
+                    null
+                    ? "Unknown"
+                    : device.incognitoEnabled
+                      ? "Enabled"
+                      : "Disabled";
 
-                    const stale =
-                      !device.lastSeenAt ||
-                      (
-                        now -
-                        device
-                          .lastSeenAt
-                          .getTime()
-                      ) >
-                      (
-                        DEVICE_STALE_MINUTES *
-                        60 *
-                        1000
-                      );
+                return (
+                  <article
+                    key={
+                      device.id
+                    }
+                    style={{
+                      border:
+                        "1px solid #ccc",
 
+                      borderRadius:
+                        "10px",
 
-                    const status =
-                      device.revokedAt
-                        ? "Revoked"
-                        : stale
-                          ? "Stale"
-                          : "Active";
+                      padding:
+                        "20px",
 
+                      marginBottom:
+                        "18px"
+                    }}
+                  >
+                    <h2
+                      style={{
+                        marginTop:
+                          0
+                      }}
+                    >
+                      {device.name}
+                    </h2>
 
-                    return (
+                    <p>
+                      <strong>
+                        Status:
+                      </strong>{" "}
+                      {status}
+                    </p>
 
-                      <article
-                        key={
-                          device.id
-                        }
-                        style={{
-                          border:
-                            "1px solid #ccc",
+                    <p>
+                      <strong>
+                        Last seen:
+                      </strong>{" "}
+                      {
+                        formatRelativeTime(
+                          device.lastSeenAt
+                        )
+                      }
+                    </p>
 
-                          borderRadius:
-                            "10px",
-
-                          padding:
-                            "20px",
-
-                          marginBottom:
-                            "18px"
-                        }}
-                      >
-
-                        <h2
-                          style={{
-                            marginTop:
-                              0
-                          }}
-                        >
-                          {
-                            device.name ??
-                            "Chrome Extension"
-                          }
-                        </h2>
-
-
+                    {
+                      device.lastSeenAt && (
                         <p>
                           <strong>
-                            Status:
+                            Last seen at:
                           </strong>{" "}
-
                           {
-                            status
-                          }
-                        </p>
-
-
-                        <p>
-                          <strong>
-                            Last seen:
-                          </strong>{" "}
-
-                          {
-                            formatRelativeTime(
-                              device.lastSeenAt
+                            formatDateTime(
+                              device.lastSeenAt,
+                              timeZone
                             )
                           }
                         </p>
+                      )
+                    }
 
+                    <p>
+                      <strong>
+                        Incognito access:
+                      </strong>{" "}
+                      {incognitoStatus}
+                    </p>
 
+                    {
+                      device.revokedAt && (
                         <p>
                           <strong>
-                            Incognito access:
+                            Revoked:
                           </strong>{" "}
-
                           {
-                            device
-                              .incognitoEnabled
-                              ? "Enabled"
-                              : "Disabled"
+                            formatDateTime(
+                              device.revokedAt,
+                              timeZone
+                            )
                           }
                         </p>
+                      )
+                    }
 
+                    <p
+                      style={{
+                        fontSize:
+                          "12px",
 
-                        {
-                          device.revokedAt && (
+                        color:
+                          "#666"
+                      }}
+                    >
+                      Device ID:{" "}
+                      {device.id}
+                    </p>
 
-                            <p>
-                              <strong>
-                                Revoked:
-                              </strong>{" "}
-
-                              {
-                                device
-                                  .revokedAt
-                                  .toLocaleString()
-                              }
-                            </p>
-
-                          )
-                        }
-
-
-                        <p
-                          style={{
-                            fontSize:
-                              "12px",
-
-                            color:
-                              "#666"
-                          }}
-                        >
-                          Device ID: {
+                    {
+                      !device.revokedAt && (
+                        <RevokeDeviceButton
+                          deviceId={
                             device.id
                           }
-                        </p>
-
-
-                        {
-                          !device.revokedAt && (
-
-                            <RevokeDeviceButton
-                              deviceId={
-                                device.id
-                              }
-                            />
-
-                          )
-                        }
-
-                      </article>
-
-                    );
-
-                  }
-                )
+                        />
+                      )
+                    }
+                  </article>
+                );
               }
-
-            </div>
-
+            )
           )
       }
-
     </main>
   );
 }

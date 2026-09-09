@@ -1,5 +1,5 @@
 // --------------------------------------------------
-// WEB PAGE → EXTENSION TOKEN BRIDGE
+// WEB PAGE -> EXTENSION TOKEN BRIDGE
 // --------------------------------------------------
 
 window.addEventListener(
@@ -7,16 +7,13 @@ window.addEventListener(
   async (
     event: MessageEvent
   ) => {
-
-    // Only accept messages from this page.
     if (
-      event.source !== window
+      event.source !==
+      window
     ) {
       return;
     }
 
-
-    // Only accept messages from our local web app.
     if (
       event.origin !==
       "http://localhost:3000"
@@ -24,10 +21,8 @@ window.addEventListener(
       return;
     }
 
-
     const data =
       event.data;
-
 
     if (
       !data ||
@@ -41,18 +36,14 @@ window.addEventListener(
       return;
     }
 
-
     const token =
       data.token.trim();
 
-
-    // Device tokens are 32 random bytes encoded as hex.
     if (
       !/^[a-f0-9]{64}$/i.test(
         token
       )
     ) {
-
       console.warn(
         "[Link Bridge] Invalid device token received."
       );
@@ -60,11 +51,23 @@ window.addEventListener(
       return;
     }
 
+    /*
+      Preserve the exact previous status.
+      A stored token may itself be revoked, so
+      token existence must never imply Connected.
+    */
+    const previousState =
+      await chrome.storage.local.get([
+        "deviceToken",
+        "linkedDeviceId",
+        "backendStatus",
+        "lastBackendSuccess"
+      ]);
+
+    const previousBackendStatus =
+      previousState.backendStatus;
 
     try {
-
-      // Keep the current working token untouched
-      // until the new token is verified.
       await chrome.storage.local.set({
         pendingDeviceToken:
           token,
@@ -72,12 +75,6 @@ window.addEventListener(
         backendStatus:
           "checking"
       });
-
-
-      console.log(
-        "[Link Bridge] New device token received. Verifying..."
-      );
-
 
       const response =
         await chrome.runtime.sendMessage({
@@ -87,39 +84,24 @@ window.addEventListener(
           token
         });
 
-
       if (
-        !response?.success
+        !response?.success ||
+        typeof response.deviceId !==
+          "string"
       ) {
-
-        console.warn(
-          "[Link Bridge] Device verification failed."
-        );
-
-
-        // Remove only the temporary token.
         await chrome.storage.local.remove(
           "pendingDeviceToken"
         );
 
-
-        /*
-          Preserve the previous device token if one
-          already exists.
-        */
-        const stored =
-          await chrome.storage.local.get(
-            "deviceToken"
-          );
-
-
         await chrome.storage.local.set({
           backendStatus:
-            stored.deviceToken
-              ? "connected"
-              : "unlinked"
+            previousBackendStatus ??
+            (
+              previousState.deviceToken
+                ? "checking"
+                : "unlinked"
+            )
         });
-
 
         window.postMessage(
           {
@@ -132,21 +114,19 @@ window.addEventListener(
           window.location.origin
         );
 
-
         return;
       }
 
-
-      // --------------------------------------------------
-      // NEW TOKEN VERIFIED
-      // --------------------------------------------------
-
       /*
-        Only now replace the old working token.
+        Promote the candidate only after the backend
+        verified the token and returned its device ID.
       */
       await chrome.storage.local.set({
         deviceToken:
           token,
+
+        linkedDeviceId:
+          response.deviceId,
 
         backendStatus:
           "connected",
@@ -155,17 +135,15 @@ window.addEventListener(
           Date.now()
       });
 
-
       await chrome.storage.local.remove(
         "pendingDeviceToken"
       );
 
-
-      console.log(
-        "[Link Bridge] Device verified successfully."
-      );
-
-
+      /*
+        The link itself is complete now, so tell the
+        page immediately. Queue synchronization can
+        continue in the background.
+      */
       window.postMessage(
         {
           source:
@@ -177,33 +155,37 @@ window.addEventListener(
         window.location.origin
       );
 
-    } catch (error) {
+      chrome.runtime.sendMessage({
+        type:
+          "DEVICE_LINK_COMMITTED"
+      }).catch(
+        (error) => {
+          console.error(
+            "[Link Bridge] Post-link sync failed:",
+            error
+          );
+        }
+      );
 
+    } catch (error) {
       console.error(
         "[Link Bridge] Failed to link device:",
         error
       );
 
-
-      // Remove only the temporary token.
       await chrome.storage.local.remove(
         "pendingDeviceToken"
       );
 
-
-      const stored =
-        await chrome.storage.local.get(
-          "deviceToken"
-        );
-
-
       await chrome.storage.local.set({
         backendStatus:
-          stored.deviceToken
-            ? "connected"
-            : "unlinked"
+          previousBackendStatus ??
+          (
+            previousState.deviceToken
+              ? "checking"
+              : "unlinked"
+          )
       });
-
 
       window.postMessage(
         {

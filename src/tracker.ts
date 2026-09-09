@@ -1,13 +1,8 @@
-type ActiveSession = {
+type SessionState = {
   id: string;
   site: string;
   startTime: number;
-};
-
-type BackgroundAudioSession = {
-  id: string;
-  site: string;
-  startTime: number;
+  deviceId?: string;
 };
 
 type UsageSession = {
@@ -20,12 +15,15 @@ type UsageSession = {
   deviceId?: string;
 };
 
+type HeartbeatApiResponse = {
+  success?: boolean;
+  deviceId?: string;
+};
 
-let activeSession: ActiveSession | null = null;
-
-const backgroundAudioSessions =
-  new Map<number, BackgroundAudioSession>();
-
+export type HeartbeatResult = {
+  success: boolean;
+  deviceId?: string;
+};
 
 const ACTIVE_SESSION_KEY =
   "activeSession";
@@ -36,11 +34,11 @@ const BACKGROUND_AUDIO_KEY =
 const SYNC_QUEUE_KEY =
   "syncQueue";
 
-const API_URL =
-  "http://localhost:3000/api/usage-sessions";
+const DEVICE_TOKEN_KEY =
+  "deviceToken";
 
-const HEARTBEAT_URL =
-  "http://localhost:3000/api/devices/heartbeat";
+const LINKED_DEVICE_ID_KEY =
+  "linkedDeviceId";
 
 const INCOGNITO_STATE_KEY =
   "lastIncognitoEnabled";
@@ -48,52 +46,68 @@ const INCOGNITO_STATE_KEY =
 const TRACKING_PAUSED_KEY =
   "trackingPaused";
 
+const API_URL =
+  "http://localhost:3000/api/usage-sessions";
+
+const HEARTBEAT_URL =
+  "http://localhost:3000/api/devices/heartbeat";
+
+let activeSession:
+  SessionState | null =
+    null;
+
+const backgroundAudioSessions =
+  new Map<number, SessionState>();
+
+
 // --------------------------------------------------
-// SAVE CURRENT ACTIVE SESSION
+// STORAGE HELPERS
 // --------------------------------------------------
 
 async function saveActiveSession() {
-
-  // Save the current active session.
   await chrome.storage.local.set({
-    [ACTIVE_SESSION_KEY]: activeSession
+    [ACTIVE_SESSION_KEY]:
+      activeSession
   });
 }
 
-
-// --------------------------------------------------
-// SAVE CURRENT BACKGROUND AUDIO SESSIONS
-// --------------------------------------------------
 
 async function saveBackgroundAudioSessions() {
-
-  // Convert the Map into an array for storage.
-  const sessions =
-    Array.from(
-      backgroundAudioSessions.entries()
-    );
-
-  // Save current background-audio sessions.
   await chrome.storage.local.set({
-    [BACKGROUND_AUDIO_KEY]: sessions
+    [BACKGROUND_AUDIO_KEY]:
+      Array.from(
+        backgroundAudioSessions.entries()
+      )
   });
 }
 
-// --------------------------------------------------
-// ADD SESSION TO SYNC QUEUE
-// --------------------------------------------------
+
+async function getLinkedDeviceId() {
+  const stored =
+    await chrome.storage.local.get(
+      LINKED_DEVICE_ID_KEY
+    );
+
+  const value =
+    stored[
+      LINKED_DEVICE_ID_KEY
+    ];
+
+  return typeof value ===
+    "string"
+      ? value
+      : undefined;
+}
+
 
 async function addToSyncQueue(
   session: UsageSession
 ) {
-
-  // Get sessions waiting for upload.
   const stored =
     await chrome.storage.local.get(
       SYNC_QUEUE_KEY
     );
 
-  // Use existing queue or start with an empty array.
   const queue =
     (
       stored[
@@ -101,76 +115,81 @@ async function addToSyncQueue(
       ] as UsageSession[] | undefined
     ) ?? [];
 
-  // Avoid adding the same session twice.
-  const alreadyQueued =
+  if (
     queue.some(
-      queuedSession =>
-        queuedSession.id === session.id
-    );
-
-  if (alreadyQueued) {
+      (queuedSession) =>
+        queuedSession.id ===
+        session.id
+    )
+  ) {
     return;
   }
 
-  // Add the session to the queue.
-  queue.push(session);
+  queue.push(
+    session
+  );
 
-  // Save the updated queue.
   await chrome.storage.local.set({
-    [SYNC_QUEUE_KEY]: queue
+    [SYNC_QUEUE_KEY]:
+      queue
   });
 }
 
 
 // --------------------------------------------------
-// SYNC QUEUE WITH BACKEND
+// SYNC QUEUE
 // --------------------------------------------------
 
 export async function syncQueuedSessions() {
   const stored =
     await chrome.storage.local.get([
       SYNC_QUEUE_KEY,
-      "deviceToken"
+      DEVICE_TOKEN_KEY
     ]);
 
-
   const queue =
-    (stored[
-      SYNC_QUEUE_KEY
-    ] ?? []) as UsageSession[];
-
+    (
+      stored[
+        SYNC_QUEUE_KEY
+      ] as UsageSession[] | undefined
+    ) ?? [];
 
   const deviceToken =
-    stored.deviceToken as
-      string | undefined;
+    stored[
+      DEVICE_TOKEN_KEY
+    ] as string | undefined;
 
-
-  // Do not upload until the extension is linked.
   if (!deviceToken) {
     console.log(
       "[Tracker] Device is not linked. Sync skipped."
     );
-
     return;
   }
 
-
-  if (queue.length === 0) {
+  if (
+    queue.length === 0
+  ) {
     return;
   }
-
 
   const remainingSessions:
     UsageSession[] = [];
 
+  for (
+    let index = 0;
+    index < queue.length;
+    index++
+  ) {
+    const session =
+      queue[index];
 
-  for (const session of queue) {
     try {
       const response =
         await fetch(
           API_URL,
           {
-            method: "POST",
+            method:
+              "POST",
 
             headers: {
               "Content-Type":
@@ -186,40 +205,47 @@ export async function syncQueuedSessions() {
               )
           }
         );
-      // Stop syncing if this device has been revoked.
-      if (response.status === 401) {
 
+      if (
+        response.status ===
+        401
+      ) {
         await chrome.storage.local.set({
-          backendStatus: "revoked"
+          backendStatus:
+            "revoked"
         });
 
+        /*
+          Preserve the current session AND every
+          session that has not been attempted yet.
+        */
+        remainingSessions.push(
+          ...queue.slice(
+            index
+          )
+        );
 
         console.warn(
-          "[Tracker] Sync stopped because device token is invalid or revoked."
+          "[Tracker] Sync stopped because the device token is invalid or revoked."
         );
-
-
-        remainingSessions.push(
-          session
-        );
-
 
         break;
       }
 
-      if (!response.ok) {
+      if (
+        !response.ok
+      ) {
+        remainingSessions.push(
+          session
+        );
+
         console.error(
           "[Tracker] Sync failed:",
           response.status
         );
 
-        remainingSessions.push(
-          session
-        );
-
         continue;
       }
-
 
       console.log(
         "[Tracker] Session synced:",
@@ -227,18 +253,16 @@ export async function syncQueuedSessions() {
       );
 
     } catch (error) {
+      remainingSessions.push(
+        session
+      );
+
       console.error(
         "[Tracker] Sync error:",
         error
       );
-
-
-      remainingSessions.push(
-        session
-      );
     }
   }
-
 
   await chrome.storage.local.set({
     [SYNC_QUEUE_KEY]:
@@ -248,81 +272,95 @@ export async function syncQueuedSessions() {
 
 
 // --------------------------------------------------
-// RESTORE TRACKER STATE
+// RESTORE STATE
 // --------------------------------------------------
 
 export async function restoreTrackerState() {
-
-  // Load sessions saved by an earlier worker.
   const stored =
     await chrome.storage.local.get([
       ACTIVE_SESSION_KEY,
       BACKGROUND_AUDIO_KEY
     ]);
 
-
-  const storedActiveSession =
+  const storedActive =
     stored[
       ACTIVE_SESSION_KEY
-    ] as ActiveSession | null | undefined;
+    ] as SessionState |
+      null |
+      undefined;
 
-
-  // Restore the active session.
-  if (storedActiveSession) {
-
-    // Support sessions created before IDs were added.
+  if (
+    storedActive
+  ) {
     activeSession = {
       id:
-        storedActiveSession.id ??
+        storedActive.id ??
         crypto.randomUUID(),
 
       site:
-        storedActiveSession.site,
+        storedActive.site,
 
       startTime:
-        storedActiveSession.startTime
+        storedActive.startTime,
+
+      deviceId:
+        typeof storedActive.deviceId ===
+          "string"
+          ? storedActive.deviceId
+          : undefined
     };
 
-
-    // Save upgraded state if necessary.
     await saveActiveSession();
-
-
-    console.log(
-      "[Tracker] Restored active session:",
-      activeSession
-    );
   }
 
-
-  const storedBackgroundSessions =
+  const storedBackground =
     stored[
       BACKGROUND_AUDIO_KEY
     ];
 
-
-  // Restore background-audio sessions.
   if (
     Array.isArray(
-      storedBackgroundSessions
+      storedBackground
     )
   ) {
-
     backgroundAudioSessions.clear();
 
-
     for (
-      const [tabId, storedSession]
-      of storedBackgroundSessions
+      const item
+      of storedBackground
     ) {
+      if (
+        !Array.isArray(
+          item
+        ) ||
+        item.length !== 2
+      ) {
+        continue;
+      }
+
+      const tabId =
+        Number(
+          item[0]
+        );
 
       const session =
-        storedSession as BackgroundAudioSession;
+        item[1] as
+          SessionState;
 
+      if (
+        !Number.isFinite(
+          tabId
+        ) ||
+        !session?.site ||
+        !Number.isFinite(
+          session.startTime
+        )
+      ) {
+        continue;
+      }
 
-      // Support sessions created before IDs were added.
       backgroundAudioSessions.set(
-        Number(tabId),
+        tabId,
         {
           id:
             session.id ??
@@ -332,191 +370,151 @@ export async function restoreTrackerState() {
             session.site,
 
           startTime:
-            session.startTime
+            session.startTime,
+
+          deviceId:
+            typeof session.deviceId ===
+              "string"
+              ? session.deviceId
+              : undefined
         }
       );
     }
 
-
-    // Save upgraded sessions if necessary.
     await saveBackgroundAudioSessions();
-
-
-    console.log(
-      "[Tracker] Restored background audio sessions:",
-      backgroundAudioSessions
-    );
   }
 
-
-  // Retry any sessions that were waiting for upload.
   await syncQueuedSessions();
 }
 
 
 // --------------------------------------------------
-// START ACTIVE SESSION
+// ACTIVE SESSION
 // --------------------------------------------------
 
 export async function startSession(
   site: string
 ) {
-
-  // Ignore if the same site is already active.
   if (
-    activeSession?.site === site
+    activeSession?.site ===
+    site
   ) {
     return;
   }
 
-
-  // End the previous active session first.
   if (
-    activeSession !== null
+    activeSession
   ) {
     await endSession();
   }
 
-
-  const startTime =
-    Date.now();
-
-
-  // Create the session ID when the session starts.
   activeSession = {
     id:
       crypto.randomUUID(),
 
     site,
 
-    startTime
+    startTime:
+      Date.now(),
+
+    deviceId:
+      await getLinkedDeviceId()
   };
 
+  await saveActiveSession();
 
   console.log(
-    `[Tracker] ACTIVE ${site} started at`,
-    new Date(
-      startTime
-    ).toLocaleTimeString()
+    `[Tracker] ACTIVE ${site} started`
   );
-
-
-  // Persist the current active session.
-  await saveActiveSession();
 }
 
 
-// --------------------------------------------------
-// END ACTIVE SESSION
-// --------------------------------------------------
-
 export async function endSession() {
-
-  // Ignore if no active session exists.
   if (
-    activeSession === null
+    !activeSession
   ) {
     return;
   }
 
+  const session =
+    activeSession;
 
   const endTime =
     Date.now();
 
+  activeSession =
+    null;
 
-  // Create a completed active session.
-  const completedSession: UsageSession = {
+  await saveActiveSession();
 
-    // Reuse the ID created when the session started.
+  const durationSeconds =
+    Math.floor(
+      (
+        endTime -
+        session.startTime
+      ) /
+      1000
+    );
+
+  if (
+    durationSeconds <= 0
+  ) {
+    return;
+  }
+
+  await addToSyncQueue({
     id:
-      activeSession.id,
+      session.id,
 
     site:
-      activeSession.site,
+      session.site,
 
     type:
       "active",
 
     startTime:
-      activeSession.startTime,
+      session.startTime,
 
     endTime,
 
-    durationSeconds:
-      Math.floor(
-        (
-          endTime -
-          activeSession.startTime
-        ) / 1000
-      )
-  };
+    durationSeconds,
 
+    deviceId:
+      session.deviceId
+  });
 
-  // Add the session to the sync queue.
-  await addToSyncQueue(
-    completedSession
-  );
-
-
-  console.log(
-    "[Tracker] Completed session:",
-    completedSession
-  );
-
-
-  // Clear the current active session.
-  activeSession = null;
-
-
-  // Persist the cleared active state.
-  await saveActiveSession();
-
-
-  // Try to upload queued sessions.
   await syncQueuedSessions();
 }
 
 
 // --------------------------------------------------
-// START BACKGROUND AUDIO
+// BACKGROUND AUDIO
 // --------------------------------------------------
 
 export async function startBackgroundAudio(
   tabId: number,
   site: string
 ) {
-
-  // Check whether this tab already has a session.
-  const existingSession =
+  const existing =
     backgroundAudioSessions.get(
       tabId
     );
 
-
-  // Ignore if the same site is already tracked.
   if (
-    existingSession &&
-    existingSession.site === site
+    existing?.site ===
+    site
   ) {
     return;
   }
 
-
-  // End the previous session for this tab.
   if (
-    existingSession
+    existing
   ) {
     await endBackgroundAudio(
       tabId
     );
   }
 
-
-  const startTime =
-    Date.now();
-
-
-  // Create the session ID when background tracking starts.
   backgroundAudioSessions.set(
     tabId,
     {
@@ -525,38 +523,29 @@ export async function startBackgroundAudio(
 
       site,
 
-      startTime
+      startTime:
+        Date.now(),
+
+      deviceId:
+        await getLinkedDeviceId()
     }
   );
 
+  await saveBackgroundAudioSessions();
 
   console.log(
-    `[Tracker] BACKGROUND AUDIO ${site} started on tab ${tabId} at`,
-    new Date(
-      startTime
-    ).toLocaleTimeString()
+    `[Tracker] BACKGROUND AUDIO ${site} started on tab ${tabId}`
   );
-
-
-  // Persist the current background state.
-  await saveBackgroundAudioSessions();
 }
 
-
-// --------------------------------------------------
-// END BACKGROUND AUDIO
-// --------------------------------------------------
 
 export async function endBackgroundAudio(
   tabId: number
 ) {
-
-  // Get the current session for this tab.
   const session =
     backgroundAudioSessions.get(
       tabId
     );
-
 
   if (
     !session
@@ -564,15 +553,31 @@ export async function endBackgroundAudio(
     return;
   }
 
+  backgroundAudioSessions.delete(
+    tabId
+  );
+
+  await saveBackgroundAudioSessions();
 
   const endTime =
     Date.now();
 
+  const durationSeconds =
+    Math.floor(
+      (
+        endTime -
+        session.startTime
+      ) /
+      1000
+    );
 
-  // Create a completed background-audio session.
-  const completedSession: UsageSession = {
+  if (
+    durationSeconds <= 0
+  ) {
+    return;
+  }
 
-    // Reuse the ID created when tracking started.
+  await addToSyncQueue({
     id:
       session.id,
 
@@ -587,63 +592,26 @@ export async function endBackgroundAudio(
 
     endTime,
 
-    durationSeconds:
-      Math.floor(
-        (
-          endTime -
-          session.startTime
-        ) / 1000
-      )
-  };
+    durationSeconds,
 
-  // Add the session to the sync queue.
-  await addToSyncQueue(
-    completedSession
-  );
+    deviceId:
+      session.deviceId
+  });
 
-
-  console.log(
-    "[Tracker] Completed session:",
-    completedSession
-  );
-
-
-  // Remove the session from current state.
-  backgroundAudioSessions.delete(
-    tabId
-  );
-
-
-  // Persist the updated background state.
-  await saveBackgroundAudioSessions();
-
-
-  // Try to upload queued sessions.
   await syncQueuedSessions();
 }
 
 
-// --------------------------------------------------
-// REMOVE INACTIVE BACKGROUND SESSIONS
-// --------------------------------------------------
-
 export async function stopMissingBackgroundAudio(
-  currentlyAudibleTabIds: Set<number>
+  currentlyAudibleTabIds:
+    Set<number>
 ) {
-
-  // Copy IDs before modifying the Map.
-  const existingTabIds =
-    Array.from(
-      backgroundAudioSessions.keys()
-    );
-
-
-  // End sessions that are no longer audible.
   for (
     const tabId
-    of existingTabIds
+    of Array.from(
+      backgroundAudioSessions.keys()
+    )
   ) {
-
     if (
       !currentlyAudibleTabIds.has(
         tabId
@@ -656,108 +624,88 @@ export async function stopMissingBackgroundAudio(
   }
 }
 
+
 // --------------------------------------------------
-// CHECKPOINT CURRENT SESSIONS
+// FIVE-MINUTE CHECKPOINT
 // --------------------------------------------------
 
 export async function checkpointCurrentSessions() {
-
-  // Do not create usage chunks while tracking is paused.
-  const paused =
-    await isTrackingPaused();
-
-
-  if (paused) {
+  if (
+    await isTrackingPaused()
+  ) {
     return;
   }
-
 
   const checkpointTime =
     Date.now();
 
+  const currentDeviceId =
+    await getLinkedDeviceId();
 
   let activeChanged =
     false;
 
-
   let backgroundChanged =
     false;
 
-
-  // --------------------------------------------------
-  // ACTIVE SESSION
-  // --------------------------------------------------
-
-  if (activeSession) {
+  if (
+    activeSession
+  ) {
+    const oldSession =
+      activeSession;
 
     const durationSeconds =
       Math.floor(
         (
           checkpointTime -
-          activeSession.startTime
-        ) / 1000
+          oldSession.startTime
+        ) /
+        1000
       );
 
-
-    // Avoid zero-second sessions.
-    if (durationSeconds > 0) {
-
-      const completedSession:
-        UsageSession = {
-
+    if (
+      durationSeconds > 0
+    ) {
+      await addToSyncQueue({
         id:
-          activeSession.id,
+          oldSession.id,
 
         site:
-          activeSession.site,
+          oldSession.site,
 
         type:
           "active",
 
         startTime:
-          activeSession.startTime,
+          oldSession.startTime,
 
         endTime:
           checkpointTime,
 
-        durationSeconds
-      };
+        durationSeconds,
 
+        deviceId:
+          oldSession.deviceId
+      });
 
-      await addToSyncQueue(
-        completedSession
-      );
-
-
-      // Immediately start a new chunk for the same site.
       activeSession = {
-
         id:
           crypto.randomUUID(),
 
         site:
-          activeSession.site,
+          oldSession.site,
 
         startTime:
-          checkpointTime
-      };
+          checkpointTime,
 
+        deviceId:
+          currentDeviceId
+      };
 
       activeChanged =
         true;
-
-
-      console.log(
-        "[Tracker] Active session checkpointed:",
-        completedSession
-      );
     }
   }
-
-
-  // --------------------------------------------------
-  // BACKGROUND AUDIO SESSIONS
-  // --------------------------------------------------
 
   for (
     const [
@@ -768,24 +716,22 @@ export async function checkpointCurrentSessions() {
       backgroundAudioSessions.entries()
     )
   ) {
-
     const durationSeconds =
       Math.floor(
         (
           checkpointTime -
           session.startTime
-        ) / 1000
+        ) /
+        1000
       );
 
-
-    if (durationSeconds <= 0) {
+    if (
+      durationSeconds <= 0
+    ) {
       continue;
     }
 
-
-    const completedSession:
-      UsageSession = {
-
+    await addToSyncQueue({
       id:
         session.id,
 
@@ -801,20 +747,15 @@ export async function checkpointCurrentSessions() {
       endTime:
         checkpointTime,
 
-      durationSeconds
-    };
+      durationSeconds,
 
+      deviceId:
+        session.deviceId
+    });
 
-    await addToSyncQueue(
-      completedSession
-    );
-
-
-    // Continue tracking the same audible tab with a new chunk.
     backgroundAudioSessions.set(
       tabId,
       {
-
         id:
           crypto.randomUUID(),
 
@@ -822,104 +763,89 @@ export async function checkpointCurrentSessions() {
           session.site,
 
         startTime:
-          checkpointTime
+          checkpointTime,
+
+        deviceId:
+          currentDeviceId
       }
     );
 
-
     backgroundChanged =
       true;
-
-
-    console.log(
-      "[Tracker] Background session checkpointed:",
-      completedSession
-    );
   }
 
-
-  // Persist the newly started active chunk.
-  if (activeChanged) {
-
+  if (
+    activeChanged
+  ) {
     await saveActiveSession();
   }
 
-
-  // Persist newly started background chunks.
-  if (backgroundChanged) {
-
+  if (
+    backgroundChanged
+  ) {
     await saveBackgroundAudioSessions();
   }
 }
 
+
 // --------------------------------------------------
-// SEND HEARTBEAT TO BACKEND
+// HEARTBEAT
 // --------------------------------------------------
 
 export async function sendHeartbeat(
   tokenOverride?: string
-): Promise<boolean> {
+): Promise<HeartbeatResult> {
+  const candidateMode =
+    typeof tokenOverride ===
+    "string";
 
   const stored =
     await chrome.storage.local.get(
-      "deviceToken"
+      DEVICE_TOKEN_KEY
     );
 
-
-  const storedDeviceToken =
-    stored.deviceToken as
-      string | undefined;
-
+  const storedToken =
+    stored[
+      DEVICE_TOKEN_KEY
+    ] as string | undefined;
 
   const deviceToken =
     tokenOverride ??
-    storedDeviceToken;
+    storedToken;
 
+  if (
+    !deviceToken
+  ) {
+    if (
+      !candidateMode
+    ) {
+      await chrome.storage.local.set({
+        backendStatus:
+          "unlinked"
+      });
+    }
 
-  if (!deviceToken) {
-
-    await chrome.storage.local.set({
-      backendStatus:
-        "unlinked"
-    });
-
-
-    console.log(
-      "[Tracker] Heartbeat skipped. Device not linked."
-    );
-
-
-    return false;
+    return {
+      success:
+        false
+    };
   }
-
 
   let incognitoEnabled =
     false;
 
-
   try {
-
     incognitoEnabled =
       await chrome.extension
         .isAllowedIncognitoAccess();
-
   } catch (error) {
-
     console.error(
       "[Tracker] Could not check incognito access:",
       error
     );
-
   }
 
-
-  const requestBody = {
-    incognitoEnabled
-  };
-
-
   try {
-
     const response =
       await fetch(
         HEARTBEAT_URL,
@@ -936,101 +862,143 @@ export async function sendHeartbeat(
           },
 
           body:
-            JSON.stringify(
-              requestBody
-            )
+            JSON.stringify({
+              incognitoEnabled
+            })
         }
       );
 
-
-    // Revoked or invalid device token.
     if (
-      response.status === 401
+      response.status ===
+      401
     ) {
+      if (
+        !candidateMode
+      ) {
+        await chrome.storage.local.set({
+          backendStatus:
+            "revoked"
+        });
+      }
 
-      await chrome.storage.local.set({
-        backendStatus:
-          "revoked"
-      });
-
-
-      console.warn(
-        "[Tracker] Device token is invalid or revoked."
-      );
-
-
-      return false;
+      return {
+        success:
+          false
+      };
     }
 
-
-    // Backend responded, but with another error.
-    if (!response.ok) {
-
-      await chrome.storage.local.set({
-        backendStatus:
-          "offline"
-      });
-
-
-      const responseText =
-        await response.text();
-
+    if (
+      !response.ok
+    ) {
+      if (
+        !candidateMode
+      ) {
+        await chrome.storage.local.set({
+          backendStatus:
+            "offline"
+        });
+      }
 
       console.error(
         "[Tracker] Heartbeat failed:",
         response.status,
-        responseText
+        await response.text()
       );
 
-
-      return false;
+      return {
+        success:
+          false
+      };
     }
 
+    let data:
+      HeartbeatApiResponse = {};
 
-    await chrome.storage.local.set({
+    try {
+      data =
+        await response.json() as
+          HeartbeatApiResponse;
+    } catch {
+      // The heartbeat route should return JSON.
+    }
 
-      backendStatus:
-        "connected",
+    const verifiedDeviceId =
+      typeof data.deviceId ===
+        "string"
+        ? data.deviceId
+        : undefined;
 
-      lastBackendSuccess:
-        Date.now()
+    if (
+      !verifiedDeviceId
+    ) {
+      if (
+        !candidateMode
+      ) {
+        await chrome.storage.local.set({
+          backendStatus:
+            "offline"
+        });
+      }
 
-    });
+      return {
+        success:
+          false
+      };
+    }
 
+    if (
+      !candidateMode
+    ) {
+      await chrome.storage.local.set({
+        backendStatus:
+          "connected",
 
-    console.log(
-      "[Tracker] Heartbeat sent"
-    );
+        lastBackendSuccess:
+          Date.now(),
 
+        [LINKED_DEVICE_ID_KEY]:
+          verifiedDeviceId
+      });
+    }
 
-    return true;
+    return {
+      success:
+        true,
+
+      deviceId:
+        verifiedDeviceId
+    };
 
   } catch (error) {
-
-    await chrome.storage.local.set({
-      backendStatus:
-        "offline"
-    });
-
+    if (
+      !candidateMode
+    ) {
+      await chrome.storage.local.set({
+        backendStatus:
+          "offline"
+      });
+    }
 
     console.error(
       "[Tracker] Heartbeat fetch failed:",
       error
     );
 
-
-    return false;
+    return {
+      success:
+        false
+    };
   }
 }
 
+
 // --------------------------------------------------
-// Check whether incognito permission changed
+// INCOGNITO STATE
 // --------------------------------------------------
 
 export async function checkIncognitoStateChange() {
   let incognitoEnabled =
     false;
-
 
   try {
     incognitoEnabled =
@@ -1045,20 +1013,16 @@ export async function checkIncognitoStateChange() {
     return;
   }
 
-
   const stored =
     await chrome.storage.local.get(
       INCOGNITO_STATE_KEY
     );
-
 
   const previousState =
     stored[
       INCOGNITO_STATE_KEY
     ] as boolean | undefined;
 
-
-  // Save the first observed state.
   if (
     previousState ===
     undefined
@@ -1071,8 +1035,6 @@ export async function checkIncognitoStateChange() {
     return;
   }
 
-
-  // Ignore unchanged state.
   if (
     previousState ===
     incognitoEnabled
@@ -1080,30 +1042,19 @@ export async function checkIncognitoStateChange() {
     return;
   }
 
-
-  console.log(
-    "[Tracker] Incognito permission changed:",
-    previousState,
-    "→",
-    incognitoEnabled
-  );
-
-
   await chrome.storage.local.set({
     [INCOGNITO_STATE_KEY]:
       incognitoEnabled
   });
 
-
-  // Record the new integrity state immediately.
   await sendHeartbeat();
 }
 
+
 // --------------------------------------------------
-// PAUSE/RESUME TRACKER
+// PAUSE / RESUME
 // --------------------------------------------------
 
-// Check whether tracking is paused.
 export async function isTrackingPaused() {
   const stored =
     await chrome.storage.local.get(
@@ -1117,7 +1068,7 @@ export async function isTrackingPaused() {
   );
 }
 
-// Pause tracking.
+
 export async function pauseTracking() {
   await chrome.storage.local.set({
     [TRACKING_PAUSED_KEY]:
@@ -1127,14 +1078,9 @@ export async function pauseTracking() {
   await sendTrackingEvent(
     "tracking_paused"
   );
-
-  console.log(
-    "[Tracker] Tracking paused"
-  );
 }
 
 
-// Resume tracking.
 export async function resumeTracking() {
   await chrome.storage.local.set({
     [TRACKING_PAUSED_KEY]:
@@ -1144,50 +1090,112 @@ export async function resumeTracking() {
   await sendTrackingEvent(
     "tracking_resumed"
   );
-
-  console.log(
-    "[Tracker] Tracking resumed"
-  );
 }
 
-// --------------------------------------------------
-// Send an integrity event to the backend
-// --------------------------------------------------
 
 async function sendTrackingEvent(
-  type: string
+  type:
+    | "tracking_paused"
+    | "tracking_resumed"
 ) {
   const stored =
     await chrome.storage.local.get(
-      "deviceToken"
+      DEVICE_TOKEN_KEY
     );
 
   const deviceToken =
-    stored.deviceToken as
-      string | undefined;
+    stored[
+      DEVICE_TOKEN_KEY
+    ] as string | undefined;
 
-  if (!deviceToken) {
+  if (
+    !deviceToken
+  ) {
     return;
   }
 
   try {
-    await fetch(
-      HEARTBEAT_URL,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          "Authorization":
-            `Bearer ${deviceToken}`
-        },
-        body:
-          JSON.stringify({
-            eventType: type
-          })
-      }
-    );
+    const response =
+      await fetch(
+        HEARTBEAT_URL,
+        {
+          method:
+            "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "Authorization":
+              `Bearer ${deviceToken}`
+          },
+
+          body:
+            JSON.stringify({
+              eventType:
+                type
+            })
+        }
+      );
+
+    if (
+      response.status ===
+      401
+    ) {
+      await chrome.storage.local.set({
+        backendStatus:
+          "revoked"
+      });
+
+      return;
+    }
+
+    if (
+      !response.ok
+    ) {
+      await chrome.storage.local.set({
+        backendStatus:
+          "offline"
+      });
+
+      return;
+    }
+
+    let data:
+      HeartbeatApiResponse = {};
+
+    try {
+      data =
+        await response.json() as
+          HeartbeatApiResponse;
+    } catch {
+      // Ignore malformed success body.
+    }
+
+    await chrome.storage.local.set({
+      backendStatus:
+        "connected",
+
+      lastBackendSuccess:
+        Date.now(),
+
+      ...(
+        typeof data.deviceId ===
+          "string"
+          ? {
+              [LINKED_DEVICE_ID_KEY]:
+                data.deviceId
+            }
+          : {}
+      )
+    });
+
   } catch (error) {
+    await chrome.storage.local.set({
+      backendStatus:
+        "offline"
+    });
+
     console.error(
       "[Tracker] Tracking event failed:",
       error

@@ -1,6 +1,7 @@
 const TRACKED_SITES = new Map<string, string>([
   ["youtube.com", "youtube"],
-  ["instagram.com", "instagram"]
+  ["instagram.com", "instagram"],
+  ["netflix.com", "netflix"]
 ]);
 
 

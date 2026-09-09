@@ -1,78 +1,113 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
+
+import {
+  redirect
+} from "next/navigation";
+
+import {
+  prisma
+} from "@/lib/prisma";
+
+import {
+  createClient
+} from "@/lib/supabase/server";
+
+import {
+  getCalendarDateInTimeZone,
+  getDayStartUtc
+} from "@/lib/reports/reportTime";
+
+import {
+  calculateTrackingCoverage,
+  getCurrentTrackingStatus
+} from "@/lib/reports/trackingCoverage";
 
 import GenerateReportButton from "./GenerateReportButton";
-import Link from "next/link";
-import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
-
 import NewPeerResponsesLink from "./NewPeerResponsesLink";
 
-
-// --------------------------------------------------
-// CONSTANTS
-// --------------------------------------------------
-
-const HEARTBEAT_INTERVAL_MINUTES = 5;
-
-const UNKNOWN_GAP_MINUTES = 15;
-
-
-// --------------------------------------------------
-// FORMAT DURATION
-// --------------------------------------------------
 
 function formatDuration(
   seconds: number
 ) {
   const hours =
     Math.floor(
-      seconds / 3600
+      seconds /
+      3600
     );
 
   const minutes =
     Math.floor(
-      (seconds % 3600) /
+      (
+        seconds %
+        3600
+      ) /
       60
     );
 
   const remainingSeconds =
-    seconds % 60;
+    seconds %
+    60;
 
-
-  if (hours > 0) {
+  if (
+    hours > 0
+  ) {
     return `${hours}h ${minutes}m`;
   }
 
-
-  if (minutes > 0) {
+  if (
+    minutes > 0
+  ) {
     return `${minutes}m ${remainingSeconds}s`;
   }
-
 
   return `${remainingSeconds}s`;
 }
 
 
-// --------------------------------------------------
-// FORMAT PERCENTAGE
-// --------------------------------------------------
-
 function formatPercentage(
-  value: number
+  seconds: number,
+  total: number
 ) {
-  return `${Math.round(value)}%`;
+  if (
+    total <= 0
+  ) {
+    return "0%";
+  }
+
+  return `${Math.round(
+    (
+      seconds /
+      total
+    ) *
+    100
+  )}%`;
 }
 
 
-// --------------------------------------------------
-// DASHBOARD
-// --------------------------------------------------
+function formatDateTime(
+  date: Date,
+  timeZone: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone,
+
+      dateStyle:
+        "medium",
+
+      timeStyle:
+        "medium"
+    }
+  ).format(
+    date
+  );
+}
+
 
 export default async function Home() {
-
   const supabase =
     await createClient();
-
 
   const {
     data: {
@@ -81,36 +116,49 @@ export default async function Home() {
   } =
     await supabase.auth.getUser();
 
-
-  if (!user) {
-    redirect("/auth");
+  if (
+    !user
+  ) {
+    redirect(
+      "/auth"
+    );
   }
 
-
-  // Keep the authenticated Supabase user synchronized with Prisma.
-  if (!user.email) {
-    throw new Error("Authenticated user does not have an email address.");
+  if (
+    !user.email
+  ) {
+    throw new Error(
+      "Authenticated user does not have an email address."
+    );
   }
 
-  await prisma.user.upsert({
-    where: {
-      id: user.id
-    },
+  const profile =
+    await prisma.user.upsert({
+      where: {
+        id:
+          user.id
+      },
 
-    update: {
-      email: user.email.toLowerCase()
-    },
+      update: {
+        email:
+          user.email
+            .toLowerCase()
+      },
 
-    create: {
-      id: user.id,
-      email: user.email.toLowerCase()
-    }
-  });
+      create: {
+        id:
+          user.id,
 
+        email:
+          user.email
+            .toLowerCase()
+      },
 
-  // --------------------------------------------------
-  // UNREAD REPORT COUNT
-  // --------------------------------------------------
+      select: {
+        timezone:
+          true
+      }
+    });
 
   const unreadReportCount =
     await prisma.reportDelivery.count({
@@ -123,621 +171,91 @@ export default async function Home() {
       }
     });
 
+  const now =
+    new Date();
+
+  const today =
+    getCalendarDateInTimeZone(
+      now,
+      profile.timezone
+    );
+
+  const startOfToday =
+    getDayStartUtc(
+      today,
+      profile.timezone
+    );
+
 
   // --------------------------------------------------
-  // LOAD USAGE SESSIONS
+  // TODAY'S USAGE - NO 100-ROW CAP
   // --------------------------------------------------
 
   const sessions =
     await prisma.usageSession.findMany({
       where: {
         userId:
-          user.id
+          user.id,
+
+        startTime: {
+          lt:
+            now
+        },
+
+        endTime: {
+          gt:
+            startOfToday
+        }
       },
 
       orderBy: {
         startTime:
           "desc"
-      },
-
-      take: 100
-    });
-
-
-  // --------------------------------------------------
-  // LOAD DEVICES
-  // --------------------------------------------------
-
-  const devices =
-    await prisma.device.findMany({
-      where: {
-        userId:
-          user.id
-      },
-
-      orderBy: {
-        lastSeenAt:
-          "desc"
       }
     });
 
+  const clippedSessions =
+    sessions
+      .map(
+        (session) => {
+          const effectiveStart =
+            Math.max(
+              session.startTime.getTime(),
+              startOfToday.getTime()
+            );
 
-  const latestDevice =
-    devices[0];
+          const effectiveEnd =
+            Math.min(
+              session.endTime.getTime(),
+              now.getTime()
+            );
 
+          const durationSeconds =
+            Math.max(
+              0,
+              Math.floor(
+                (
+                  effectiveEnd -
+                  effectiveStart
+                ) /
+                1000
+              )
+            );
 
-  // --------------------------------------------------
-  // TODAY
-  // --------------------------------------------------
-
-  const now =
-    new Date();
-
-
-  const startOfToday =
-    new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-
-
-  // --------------------------------------------------
-  // TODAY'S TRACKING EVENTS
-  // --------------------------------------------------
-
-  const trackingEvents =
-    latestDevice
-      ? await prisma.trackingEvent.findMany({
-          where: {
-            deviceId:
-              latestDevice.id,
-
-            createdAt: {
-              gte:
-                startOfToday
-            }
-          },
-
-          orderBy: {
-            createdAt:
-              "asc"
-          }
-        })
-      : [];
-    const previousPauseEvent =
-  latestDevice
-    ? await prisma.trackingEvent.findFirst({
-        where: {
-          deviceId:
-            latestDevice.id,
-
-          type: {
-            in: [
-              "tracking_paused",
-              "tracking_resumed"
-            ]
-          },
-
-          createdAt: {
-            lt:
-              startOfToday
-          }
-        },
-
-        orderBy: {
-          createdAt:
-            "desc"
+          return {
+            ...session,
+            durationSeconds
+          };
         }
-      })
-    : null;
-
-
-  // --------------------------------------------------
-  // HEARTBEAT EVENTS ONLY
-  // --------------------------------------------------
-
-  const heartbeatEvents =
-    trackingEvents.filter(
-      (event) =>
-        event.type ===
-        "heartbeat"
-    );
-  const pauseEvents =
-  trackingEvents.filter(
-    (event) =>
-      event.type ===
-        "tracking_paused" ||
-      event.type ===
-        "tracking_resumed"
-  );
-
-
-const pauseIntervals: {
-  start: Date;
-  end: Date;
-}[] = [];
-
-
-let paused =
-  previousPauseEvent?.type ===
-  "tracking_paused";
-
-
-let pauseStart =
-  paused
-    ? startOfToday
-    : null;
-
-
-for (
-  const event
-  of pauseEvents
-) {
-
-  if (
-    event.type ===
-      "tracking_paused" &&
-    !paused
-  ) {
-
-    paused =
-      true;
-
-    pauseStart =
-      event.createdAt;
-  }
-
-
-  if (
-    event.type ===
-      "tracking_resumed" &&
-    paused
-  ) {
-
-    if (pauseStart) {
-
-      pauseIntervals.push({
-        start:
-          pauseStart,
-
-        end:
-          event.createdAt
-      });
-    }
-
-
-    paused =
-      false;
-
-    pauseStart =
-      null;
-  }
-}
-
-
-// Still paused right now.
-if (
-  paused &&
-  pauseStart
-) {
-
-  pauseIntervals.push({
-    start:
-      pauseStart,
-
-    end:
-      now
-  });
-}
-
-function getPausedSeconds(
-  start: Date,
-  end: Date
-) {
-
-  let seconds = 0;
-
-
-  for (
-    const interval
-    of pauseIntervals
-  ) {
-
-    const overlapStart =
-      Math.max(
-        start.getTime(),
-        interval.start.getTime()
-      );
-
-
-    const overlapEnd =
-      Math.min(
-        end.getTime(),
-        interval.end.getTime()
-      );
-
-
-    if (
-      overlapEnd >
-      overlapStart
-    ) {
-
-      seconds +=
-        Math.floor(
-          (
-            overlapEnd -
-            overlapStart
-          ) /
-          1000
-        );
-    }
-  }
-
-
-  return seconds;
-}
-
-
-  // --------------------------------------------------
-// COVERAGE CALCULATION
-// --------------------------------------------------
-
-let goodSeconds = 0;
-let limitedSeconds = 0;
-let pausedSeconds = 0;
-let unknownSeconds = 0;
-
-function addCoverage(
-  start: Date,
-  end: Date,
-  type:
-    | "GOOD"
-    | "LIMITED"
-    | "UNKNOWN"
-) {
-
-  const totalSeconds =
-    Math.max(
-      0,
-      Math.floor(
-        (
-          end.getTime() -
-          start.getTime()
-        ) /
-        1000
       )
-    );
-
-
-  const pausedOverlap =
-    getPausedSeconds(
-      start,
-      end
-    );
-
-
-  const normalSeconds =
-    Math.max(
-      0,
-      totalSeconds -
-      pausedOverlap
-    );
-
-
-  pausedSeconds +=
-    pausedOverlap;
-
-
-  if (
-    type ===
-    "GOOD"
-  ) {
-
-    goodSeconds +=
-      normalSeconds;
-
-  } else if (
-    type ===
-    "LIMITED"
-  ) {
-
-    limitedSeconds +=
-      normalSeconds;
-
-  } else {
-
-    unknownSeconds +=
-      normalSeconds;
-  }
-}
-
-
-// --------------------------------------------------
-// BEFORE FIRST HEARTBEAT
-// --------------------------------------------------
-
-if (
-  heartbeatEvents.length > 0
-) {
-
-  addCoverage(
-    startOfToday,
-    heartbeatEvents[0].createdAt,
-    "UNKNOWN"
-  );
-}
-
-
-// --------------------------------------------------
-// BETWEEN HEARTBEATS
-// --------------------------------------------------
-
-for (
-  let index = 0;
-  index <
-  heartbeatEvents.length - 1;
-  index++
-) {
-
-  const current =
-    heartbeatEvents[index];
-
-  const next =
-    heartbeatEvents[
-      index + 1
-    ];
-
-
-  const gapMinutes =
-    (
-      next.createdAt.getTime() -
-      current.createdAt.getTime()
-    ) /
-    (
-      1000 *
-      60
-    );
-
-
-  if (
-    gapMinutes >
-    UNKNOWN_GAP_MINUTES
-  ) {
-
-    addCoverage(
-      current.createdAt,
-      next.createdAt,
-      "UNKNOWN"
-    );
-
-    continue;
-  }
-
-
-  if (
-    current.incognitoEnabled
-  ) {
-
-    addCoverage(
-      current.createdAt,
-      next.createdAt,
-      "GOOD"
-    );
-
-  } else {
-
-    addCoverage(
-      current.createdAt,
-      next.createdAt,
-      "LIMITED"
-    );
-  }
-}
-
-
-// --------------------------------------------------
-// LAST HEARTBEAT → NOW
-// --------------------------------------------------
-
-if (
-  heartbeatEvents.length > 0
-) {
-
-  const lastHeartbeat =
-    heartbeatEvents[
-      heartbeatEvents.length - 1
-    ];
-
-
-  const minutesSinceLastHeartbeat =
-    (
-      now.getTime() -
-      lastHeartbeat.createdAt.getTime()
-    ) /
-    (
-      1000 *
-      60
-    );
-
-
-  if (
-    minutesSinceLastHeartbeat >
-    UNKNOWN_GAP_MINUTES
-  ) {
-
-    addCoverage(
-      lastHeartbeat.createdAt,
-      now,
-      "UNKNOWN"
-    );
-
-  } else if (
-    lastHeartbeat.incognitoEnabled
-  ) {
-
-    addCoverage(
-      lastHeartbeat.createdAt,
-      now,
-      "GOOD"
-    );
-
-  } else {
-
-    addCoverage(
-      lastHeartbeat.createdAt,
-      now,
-      "LIMITED"
-    );
-  }
-}
-
-
-// --------------------------------------------------
-// NO HEARTBEATS TODAY
-// --------------------------------------------------
-
-if (
-  heartbeatEvents.length === 0
-) {
-
-  addCoverage(
-    startOfToday,
-    now,
-    "UNKNOWN"
-  );
-}
-  // --------------------------------------------------
-  // COVERAGE TOTALS
-  // --------------------------------------------------
-
-  const totalCoverageSeconds =
-  goodSeconds +
-  limitedSeconds +
-  pausedSeconds +
-  unknownSeconds;
-
-
-  const goodPercentage =
-    totalCoverageSeconds > 0
-      ? (
-          goodSeconds /
-          totalCoverageSeconds
-        ) * 100
-      : 0;
-
-
-  const limitedPercentage =
-    totalCoverageSeconds > 0
-      ? (
-          limitedSeconds /
-          totalCoverageSeconds
-        ) * 100
-      : 0;
-
-
-  const pausedPercentage =
-    totalCoverageSeconds > 0
-      ? (
-          pausedSeconds /
-          totalCoverageSeconds
-        ) * 100
-      : 0;
-
-
-  const unknownPercentage =
-    totalCoverageSeconds > 0
-      ? (
-          unknownSeconds /
-          totalCoverageSeconds
-        ) * 100
-      : 0;
-
-
-  // --------------------------------------------------
-  // CURRENT TRACKING STATUS
-  // --------------------------------------------------
-
-  let currentTrackingStatus =
-    "UNKNOWN";
-
-
-  // Find the most recent pause or resume event.
-  const latestPauseEvent =
-    [...trackingEvents]
-      .reverse()
-      .find(
-        (event) =>
-          event.type ===
-            "tracking_paused" ||
-          event.type ===
-            "tracking_resumed"
+      .filter(
+        (session) =>
+          session.durationSeconds >
+          0
       );
 
-
-  const currentlyPaused =
-    latestPauseEvent?.type ===
-    "tracking_paused";
-
-
-  if (currentlyPaused) {
-
-    currentTrackingStatus =
-      "PAUSED";
-
-  } else {
-
-    const lastHeartbeat =
-      heartbeatEvents[
-        heartbeatEvents.length - 1
-      ];
-
-
-    if (lastHeartbeat) {
-
-      const minutesSinceLastHeartbeat =
-        (
-          now.getTime() -
-          lastHeartbeat.createdAt.getTime()
-        ) /
-        (
-          1000 *
-          60
-        );
-
-
-      if (
-        minutesSinceLastHeartbeat <=
-        UNKNOWN_GAP_MINUTES
-      ) {
-
-        currentTrackingStatus =
-          lastHeartbeat.incognitoEnabled
-            ? "GOOD"
-            : "LIMITED";
-      }
-    }
-  }
-
-
-  // --------------------------------------------------
-  // TODAY'S USAGE SESSIONS
-  // --------------------------------------------------
-
-  const todaySessions =
-    sessions.filter(
-      (session) =>
-        session.startTime >=
-        startOfToday
-    );
-
-
-  // --------------------------------------------------
-  // USAGE TOTALS
-  // --------------------------------------------------
-
   const totalSeconds =
-    todaySessions.reduce(
+    clippedSessions.reduce(
       (
         total,
         session
@@ -747,9 +265,8 @@ if (
       0
     );
 
-
   const activeSeconds =
-    todaySessions
+    clippedSessions
       .filter(
         (session) =>
           session.type ===
@@ -765,9 +282,8 @@ if (
         0
       );
 
-
   const backgroundSeconds =
-    todaySessions
+    clippedSessions
       .filter(
         (session) =>
           session.type ===
@@ -783,36 +299,26 @@ if (
         0
       );
 
-
-  // --------------------------------------------------
-  // SITE TOTALS
-  // --------------------------------------------------
-
   const siteTotals =
     new Map<
       string,
       number
     >();
 
-
   for (
     const session
-    of todaySessions
+    of clippedSessions
   ) {
-
-    const current =
-      siteTotals.get(
-        session.site
-      ) ?? 0;
-
-
     siteTotals.set(
       session.site,
-      current +
-        session.durationSeconds
+      (
+        siteTotals.get(
+          session.site
+        ) ?? 0
+      ) +
+      session.durationSeconds
     );
   }
-
 
   const siteUsage =
     Array.from(
@@ -828,8 +334,34 @@ if (
 
 
   // --------------------------------------------------
-  // PAGE
+  // SHARED INTEGRITY LOGIC
   // --------------------------------------------------
+
+  const coverage =
+    await calculateTrackingCoverage(
+      user.id,
+      startOfToday,
+      now
+    );
+
+  const current =
+    await getCurrentTrackingStatus(
+      user.id,
+      now
+    );
+
+  const totalCoverage =
+    coverage.goodSeconds +
+    coverage.limitedSeconds +
+    coverage.pausedSeconds +
+    coverage.unknownSeconds;
+
+  const recentSessions =
+    sessions.slice(
+      0,
+      20
+    );
+
 
   return (
     <main
@@ -847,11 +379,9 @@ if (
           "Arial, sans-serif"
       }}
     >
-
       <h1>
         Accountability Tracker
       </h1>
-
 
       <p>
         Logged in as{" "}
@@ -860,159 +390,134 @@ if (
         </strong>
       </p>
 
-            {/* ACCOUNTABILITY NAVIGATION */}
+      <p>
+        Timezone:{" "}
+        <strong>
+          {profile.timezone}
+        </strong>
+      </p>
+
+
+      {/* ACCOUNTABILITY */}
 
       <section
         style={{
-          marginTop: "30px"
+          marginTop:
+            "30px"
         }}
       >
-
         <h2>
           Accountability
         </h2>
 
-
         <div
           style={{
-            display: "grid",
+            display:
+              "grid",
+
             gridTemplateColumns:
               "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "20px",
-            marginTop: "15px"
+
+            gap:
+              "20px"
           }}
         >
-
-          {/* MY ACCOUNTABILITY */}
-
           <div
             style={{
-              border: "1px solid #ccc",
-              borderRadius: "10px",
-              padding: "20px"
+              border:
+                "1px solid #ccc",
+
+              borderRadius:
+                "10px",
+
+              padding:
+                "20px"
             }}
           >
-
             <h3>
               My Accountability
             </h3>
 
-
-            <p
-              style={{
-                color: "#555"
-              }}
-            >
-              View your reports and feedback from
-              your accountability peers.
+            <p>
+              Review your reports and feedback
+              from your accountability peers.
             </p>
 
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: "12px"
-              }}
-            >
-
+            <p>
               <Link href="/reports">
                 My Daily Reports
               </Link>
+            </p>
 
-
-              <NewPeerResponsesLink
-                userId={
-                  user.id
-                }
-              />
-
-            </div>
-
+            <NewPeerResponsesLink
+              userId={
+                user.id
+              }
+            />
           </div>
-
-
-          {/* ACCOUNTABILITY FOR OTHERS */}
 
           <div
             style={{
-              border: "1px solid #ccc",
-              borderRadius: "10px",
-              padding: "20px"
+              border:
+                "1px solid #ccc",
+
+              borderRadius:
+                "10px",
+
+              padding:
+                "20px"
             }}
           >
-
             <h3>
               Accountability for Others
             </h3>
 
-
-            <p
-              style={{
-                color: "#555"
-              }}
-            >
-              Review reports from people who trust
-              you to hold them accountable.
+            <p>
+              Review reports from people who
+              trust you to hold them accountable.
             </p>
 
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: "12px"
-              }}
-            >
-
+            <p>
               <Link href="/inbox">
-
                 Report Inbox
-
                 {
-                  unreadReportCount > 0 &&
-                  ` (${unreadReportCount} unread)`
+                  unreadReportCount >
+                  0
+                    ? ` (${unreadReportCount} unread)`
+                    : ""
                 }
-
               </Link>
+            </p>
 
-
+            <p>
               <Link href="/peers">
                 Trusted Peers
               </Link>
-
-            </div>
-
+            </p>
           </div>
-
         </div>
-
       </section>
 
 
-      {/* REPORT GENERATION */}
+      {/* REPORT PREVIEW */}
 
       <section
         style={{
-          marginTop: "30px"
+          marginTop:
+            "30px"
         }}
       >
-
         <h2>
           Daily Report
         </h2>
 
-
         <p>
-          Generate your accountability report
-          manually for testing.
+          Generate today's preview report for testing.
+          Today's incomplete report is not delivered
+          to accountability peers.
         </p>
 
-
         <GenerateReportButton />
-
       </section>
 
 
@@ -1020,30 +525,27 @@ if (
 
       <section
         style={{
-          marginTop: "30px"
+          marginTop:
+            "30px"
         }}
       >
-
         <h2>
           Settings
         </h2>
 
-        <Link href="/devices">
-          Devices
-        </Link>
+        <p>
+          <Link href="/devices">
+            Devices
+          </Link>
+        </p>
 
-        <Link href="/settings">
-          Timezone & Settings
-        </Link>
-
+        <p>
+          <Link href="/settings">
+            Timezone & Settings
+          </Link>
+        </p>
       </section>
 
-
-      <hr
-        style={{
-          margin: "30px 0"
-        }}
-      />
 
       <hr
         style={{
@@ -1053,14 +555,12 @@ if (
       />
 
 
-      {/* CURRENT TRACKING STATUS */}
+      {/* CURRENT STATUS */}
 
       <section>
-
         <h2>
           Current Tracking Status
         </h2>
-
 
         <div
           style={{
@@ -1071,59 +571,52 @@ if (
               "8px",
 
             padding:
-              "20px",
-
-            marginTop:
-              "15px"
+              "20px"
           }}
         >
-
           <p>
             <strong>
               Status:
             </strong>{" "}
-
-            {
-              currentTrackingStatus
-            }
+            {current.status}
           </p>
 
+          {
+            current.device
+              ? (
+                <>
+                  <p>
+                    <strong>
+                      Device:
+                    </strong>{" "}
+                    {
+                      current.device.name
+                    }
+                  </p>
 
-          {latestDevice ? (
-            <>
-
-              <p>
-                <strong>
-                  Device:
-                </strong>{" "}
-
-                {latestDevice.name}
-              </p>
-
-
-              <p>
-                <strong>
-                  Last heartbeat:
-                </strong>{" "}
-
-                {
-                  latestDevice.lastSeenAt
-                    ? latestDevice.lastSeenAt.toLocaleString()
-                    : "Never"
-                }
-              </p>
-
-            </>
-          ) : (
-
-            <p>
-              No linked device found.
-            </p>
-
-          )}
-
+                  <p>
+                    <strong>
+                      Last heartbeat:
+                    </strong>{" "}
+                    {
+                      current.device.lastSeenAt
+                        ? formatDateTime(
+                            current.device.lastSeenAt,
+                            profile.timezone
+                          )
+                        : "Never"
+                    }
+                  </p>
+                </>
+              )
+              : (
+                <p>
+                  No confirmed, non-revoked
+                  tracking device found.
+                </p>
+              )
+          }
         </div>
-
       </section>
 
 
@@ -1135,190 +628,90 @@ if (
       />
 
 
-      {/* TRACKING COVERAGE */}
+      {/* COVERAGE */}
 
       <section>
-
         <h2>
           Today's Tracking Coverage
         </h2>
 
-
         <div
           style={{
             display:
               "grid",
 
             gridTemplateColumns:
-              "repeat(auto-fit, minmax(180px, 1fr))",
+              "repeat(auto-fit, minmax(160px, 1fr))",
 
             gap:
-              "15px",
-
-            marginTop:
               "15px"
           }}
         >
+          {
+            [
+              [
+                "Good",
+                coverage.goodSeconds
+              ],
+              [
+                "Limited",
+                coverage.limitedSeconds
+              ],
+              [
+                "Paused",
+                coverage.pausedSeconds
+              ],
+              [
+                "Unknown",
+                coverage.unknownSeconds
+              ]
+            ].map(
+              (
+                [
+                  label,
+                  seconds
+                ]
+              ) => (
+                <div
+                  key={
+                    label as string
+                  }
+                  style={{
+                    border:
+                      "1px solid #ccc",
 
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
+                    borderRadius:
+                      "8px",
 
-              borderRadius:
-                "8px",
+                    padding:
+                      "20px"
+                  }}
+                >
+                  <h3>
+                    {label}
+                  </h3>
 
-              padding:
-                "20px"
-            }}
-          >
+                  <p>
+                    {
+                      formatDuration(
+                        seconds as number
+                      )
+                    }
+                  </p>
 
-            <h3>
-              Good
-            </h3>
-
-            <p>
-              {
-                formatDuration(
-                  goodSeconds
-                )
-              }
-            </p>
-
-            <p>
-              {
-                formatPercentage(
-                  goodPercentage
-                )
-              }
-            </p>
-
-          </div>
-
-
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              borderRadius:
-                "8px",
-
-              padding:
-                "20px"
-            }}
-          >
-
-            <h3>
-              Limited
-            </h3>
-
-            <p>
-              {
-                formatDuration(
-                  limitedSeconds
-                )
-              }
-            </p>
-
-            <p>
-              {
-                formatPercentage(
-                  limitedPercentage
-                )
-              }
-            </p>
-
-          </div>
-
-
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              borderRadius:
-                "8px",
-
-              padding:
-                "20px"
-            }}
-          >
-
-            <h3>
-              Paused
-            </h3>
-
-            <p>
-              {
-                formatDuration(
-                  pausedSeconds
-                )
-              }
-            </p>
-
-            <p>
-              {
-                formatPercentage(
-                  pausedPercentage
-                )
-              }
-            </p>
-
-          </div>
-
-
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              borderRadius:
-                "8px",
-
-              padding:
-                "20px"
-            }}
-          >
-
-            <h3>
-              Unknown
-            </h3>
-
-            <p>
-              {
-                formatDuration(
-                  unknownSeconds
-                )
-              }
-            </p>
-
-            <p>
-              {
-                formatPercentage(
-                  unknownPercentage
-                )
-              }
-            </p>
-
-          </div>
-
+                  <p>
+                    {
+                      formatPercentage(
+                        seconds as number,
+                        totalCoverage
+                      )
+                    }
+                  </p>
+                </div>
+              )
+            )
+          }
         </div>
-
-
-        <p
-          style={{
-            marginTop:
-              "15px"
-          }}
-        >
-          Heartbeats expected every{" "}
-          {HEARTBEAT_INTERVAL_MINUTES} minutes.
-          Gaps longer than{" "}
-          {UNKNOWN_GAP_MINUTES} minutes
-          are treated as unknown coverage.
-        </p>
-
       </section>
 
 
@@ -1330,152 +723,60 @@ if (
       />
 
 
-      {/* USAGE SUMMARY */}
+      {/* USAGE */}
 
       <section>
-
         <h2>
           Today's Usage
         </h2>
 
+        <p>
+          <strong>
+            Total:
+          </strong>{" "}
+          {
+            formatDuration(
+              totalSeconds
+            )
+          }
+        </p>
 
-        <div
-          style={{
-            display:
-              "grid",
+        <p>
+          <strong>
+            Active:
+          </strong>{" "}
+          {
+            formatDuration(
+              activeSeconds
+            )
+          }
+        </p>
 
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(180px, 1fr))",
+        <p>
+          <strong>
+            Background audio:
+          </strong>{" "}
+          {
+            formatDuration(
+              backgroundSeconds
+            )
+          }
+        </p>
 
-            gap:
-              "15px",
-
-            marginTop:
-              "15px"
-          }}
-        >
-
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              padding:
-                "20px",
-
-              borderRadius:
-                "8px"
-            }}
-          >
-
-            <h3>
-              Total Usage
-            </h3>
-
-            <p>
-              {
-                formatDuration(
-                  totalSeconds
-                )
-              }
-            </p>
-
-          </div>
-
-
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              padding:
-                "20px",
-
-              borderRadius:
-                "8px"
-            }}
-          >
-
-            <h3>
-              Active Usage
-            </h3>
-
-            <p>
-              {
-                formatDuration(
-                  activeSeconds
-                )
-              }
-            </p>
-
-          </div>
-
-
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              padding:
-                "20px",
-
-              borderRadius:
-                "8px"
-            }}
-          >
-
-            <h3>
-              Background Audio
-            </h3>
-
-            <p>
-              {
-                formatDuration(
-                  backgroundSeconds
-                )
-              }
-            </p>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-
-      {/* SITE BREAKDOWN */}
-
-      <section>
-
-        <h2>
+        <h3>
           Site Breakdown
-        </h2>
-
+        </h3>
 
         {
           siteUsage.length ===
-          0
+            0
             ? (
               <p>
                 No tracked usage today.
               </p>
             )
             : (
-              <div
-                style={{
-                  marginTop:
-                    "15px"
-                }}
-              >
-
+              <ul>
                 {
                   siteUsage.map(
                     (
@@ -1484,48 +785,24 @@ if (
                         seconds
                       ]
                     ) => (
-
-                      <div
+                      <li
                         key={
                           site
                         }
-                        style={{
-                          display:
-                            "flex",
-
-                          justifyContent:
-                            "space-between",
-
-                          padding:
-                            "10px 0",
-
-                          borderBottom:
-                            "1px solid #eee"
-                        }}
                       >
-
-                        <span>
-                          {site}
-                        </span>
-
-                        <strong>
-                          {
-                            formatDuration(
-                              seconds
-                            )
-                          }
-                        </strong>
-
-                      </div>
-
+                        {site}:{" "}
+                        {
+                          formatDuration(
+                            seconds
+                          )
+                        }
+                      </li>
                     )
                   )
                 }
-
-              </div>
+              </ul>
             )
         }
-
       </section>
 
 
@@ -1537,207 +814,75 @@ if (
       />
 
 
-      {/* RECENT SESSIONS */}
+      {/* RECENT ACTIVITY */}
 
       <section>
-
         <h2>
-          Recent Sessions
+          Recent Activity
         </h2>
 
-
         {
-          sessions.length ===
-          0
+          recentSessions.length ===
+            0
             ? (
               <p>
-                No sessions recorded yet.
+                No sessions recorded today.
               </p>
             )
             : (
-              <div
-                style={{
-                  overflowX:
-                    "auto",
-
-                  marginTop:
-                    "15px"
-                }}
-              >
-
-                <table
-                  style={{
-                    width:
-                      "100%",
-
-                    borderCollapse:
-                      "collapse"
-                  }}
-                >
-
-                  <thead>
-
-                    <tr>
-
-                      <th
-                        style={{
-                          textAlign:
-                            "left",
-
-                          padding:
-                            "10px",
-
-                          borderBottom:
-                            "1px solid #ccc"
-                        }}
-                      >
-                        Site
-                      </th>
-
-
-                      <th
-                        style={{
-                          textAlign:
-                            "left",
-
-                          padding:
-                            "10px",
-
-                          borderBottom:
-                            "1px solid #ccc"
-                        }}
-                      >
-                        Type
-                      </th>
-
-
-                      <th
-                        style={{
-                          textAlign:
-                            "left",
-
-                          padding:
-                            "10px",
-
-                          borderBottom:
-                            "1px solid #ccc"
-                        }}
-                      >
-                        Started
-                      </th>
-
-
-                      <th
-                        style={{
-                          textAlign:
-                            "left",
-
-                          padding:
-                            "10px",
-
-                          borderBottom:
-                            "1px solid #ccc"
-                        }}
-                      >
-                        Duration
-                      </th>
-
-                    </tr>
-
-                  </thead>
-
-
-                  <tbody>
-
-                    {
-                      sessions.map(
-                        (
-                          session
-                        ) => (
-
-                          <tr
-                            key={
-                              session.id
-                            }
-                          >
-
-                            <td
-                              style={{
-                                padding:
-                                  "10px",
-
-                                borderBottom:
-                                  "1px solid #eee"
-                              }}
-                            >
-                              {
-                                session.site
-                              }
-                            </td>
-
-
-                            <td
-                              style={{
-                                padding:
-                                  "10px",
-
-                                borderBottom:
-                                  "1px solid #eee"
-                              }}
-                            >
-                              {
-                                session.type
-                              }
-                            </td>
-
-
-                            <td
-                              style={{
-                                padding:
-                                  "10px",
-
-                                borderBottom:
-                                  "1px solid #eee"
-                              }}
-                            >
-                              {
-                                session.startTime.toLocaleString()
-                              }
-                            </td>
-
-
-                            <td
-                              style={{
-                                padding:
-                                  "10px",
-
-                                borderBottom:
-                                  "1px solid #eee"
-                              }}
-                            >
-                              {
-                                formatDuration(
-                                  session.durationSeconds
-                                )
-                              }
-                            </td>
-
-                          </tr>
-
-                        )
-                      )
+              recentSessions.map(
+                (session) => (
+                  <article
+                    key={
+                      session.id
                     }
+                    style={{
+                      border:
+                        "1px solid #ccc",
 
-                  </tbody>
+                      borderRadius:
+                        "8px",
 
-                </table>
+                      padding:
+                        "15px",
 
-              </div>
+                      marginBottom:
+                        "10px"
+                    }}
+                  >
+                    <strong>
+                      {session.site}
+                    </strong>
+
+                    <p>
+                      Type:{" "}
+                      {session.type}
+                    </p>
+
+                    <p>
+                      Duration:{" "}
+                      {
+                        formatDuration(
+                          session.durationSeconds
+                        )
+                      }
+                    </p>
+
+                    <p>
+                      Started:{" "}
+                      {
+                        formatDateTime(
+                          session.startTime,
+                          profile.timezone
+                        )
+                      }
+                    </p>
+                  </article>
+                )
+              )
             )
         }
-
       </section>
-
     </main>
   );
 }

@@ -5,23 +5,40 @@ import {
 } from "react";
 
 
+type GenerateResponse = {
+  error?: string;
+  message?: string;
+};
+
+
 export default function GenerateReportButton() {
+  const [
+    loading,
+    setLoading
+  ] =
+    useState(
+      false
+    );
 
-  const [loading, setLoading] =
-    useState(false);
-
-  const [message, setMessage] =
-    useState("");
+  const [
+    message,
+    setMessage
+  ] =
+    useState(
+      ""
+    );
 
 
   async function generateReport() {
+    setLoading(
+      true
+    );
 
-    setLoading(true);
-    setMessage("");
-
+    setMessage(
+      ""
+    );
 
     try {
-
       const response =
         await fetch(
           "/api/reports/generate",
@@ -35,56 +52,61 @@ export default function GenerateReportButton() {
             },
 
             body:
-              JSON.stringify({})
+              JSON.stringify(
+                {}
+              )
           }
         );
 
+      const text =
+        await response.text();
 
-      const data =
-        await response.json();
+      let data:
+        GenerateResponse = {};
 
+      try {
+        data =
+          text
+            ? JSON.parse(
+                text
+              ) as
+                GenerateResponse
+            : {};
+      } catch {
+        data = {};
+      }
 
-      if (!response.ok) {
-
+      if (
+        !response.ok
+      ) {
         setMessage(
           data.error ??
           "Could not generate report."
         );
 
         return;
-
       }
 
-
       setMessage(
-        "Today's report generated successfully."
+        data.message ??
+        "Today's preview report generated."
       );
-
-
-      console.log(
-        "Generated report:",
-        data.report
-      );
-
 
     } catch (error) {
-
       console.error(
         "Report generation failed:",
         error
       );
-
 
       setMessage(
         "Could not generate report."
       );
 
     } finally {
-
-      setLoading(false);
-
+      setLoading(
+        false
+      );
     }
-
   }
 
 
@@ -95,10 +117,11 @@ export default function GenerateReportButton() {
           "20px"
       }}
     >
-
       <button
         type="button"
-        disabled={loading}
+        disabled={
+          loading
+        }
         onClick={
           generateReport
         }
@@ -112,19 +135,15 @@ export default function GenerateReportButton() {
               : "pointer"
         }}
       >
-
         {
           loading
             ? "Generating..."
-            : "Generate Today's Report"
+            : "Generate Today's Preview"
         }
-
       </button>
-
 
       {
         message && (
-
           <p
             style={{
               marginTop:
@@ -133,10 +152,8 @@ export default function GenerateReportButton() {
           >
             {message}
           </p>
-
         )
       }
-
     </div>
   );
 }

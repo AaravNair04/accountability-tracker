@@ -15,7 +15,6 @@ export default function ReportResponseForm({
   reportId,
   initialMessage
 }: Props) {
-
   const [
     message,
     setMessage
@@ -24,31 +23,40 @@ export default function ReportResponseForm({
       initialMessage
     );
 
-
   const [
     saving,
     setSaving
   ] =
-    useState(false);
-
+    useState(
+      false
+    );
 
   const [
     status,
     setStatus
   ] =
-    useState("");
+    useState(
+      ""
+    );
+
+  const [
+    hasSavedResponse,
+    setHasSavedResponse
+  ] =
+    useState(
+      Boolean(
+        initialMessage
+      )
+    );
 
 
   async function submitResponse() {
-
     const trimmedMessage =
       message.trim();
 
-
     if (
-      trimmedMessage.length === 0
+      !trimmedMessage
     ) {
-
       setStatus(
         "Please enter a response."
       );
@@ -56,14 +64,15 @@ export default function ReportResponseForm({
       return;
     }
 
+    setSaving(
+      true
+    );
 
-    setSaving(true);
-
-    setStatus("");
-
+    setStatus(
+      ""
+    );
 
     try {
-
       const response =
         await fetch(
           "/api/report-responses",
@@ -79,45 +88,34 @@ export default function ReportResponseForm({
             body:
               JSON.stringify({
                 reportId,
+
                 message:
                   trimmedMessage
               })
           }
         );
 
-
       const text =
         await response.text();
 
-
       let data: {
-        success?: boolean;
         error?: string;
       } = {};
 
-
-      if (text) {
-
-        try {
-
-          data =
-            JSON.parse(
-              text
-            );
-
-        } catch {
-
-          data = {};
-
-        }
-
+      try {
+        data =
+          text
+            ? JSON.parse(
+                text
+              )
+            : {};
+      } catch {
+        data = {};
       }
-
 
       if (
         !response.ok
       ) {
-
         setStatus(
           data.error ??
           "Failed to save response."
@@ -126,31 +124,33 @@ export default function ReportResponseForm({
         return;
       }
 
+      setMessage(
+        trimmedMessage
+      );
+
+      setHasSavedResponse(
+        true
+      );
 
       setStatus(
         "Response saved."
       );
 
-    } catch (
-      error
-    ) {
-
+    } catch (error) {
       console.error(
         "Response submission failed:",
         error
       );
-
 
       setStatus(
         "Something went wrong."
       );
 
     } finally {
-
-      setSaving(false);
-
+      setSaving(
+        false
+      );
     }
-
   }
 
 
@@ -167,24 +167,19 @@ export default function ReportResponseForm({
           "1px solid #ddd"
       }}
     >
-
       <h2>
         Your Response
       </h2>
 
-
       <p>
-        Leave a short message for
-        the person you are
-        holding accountable.
+        Leave a short message for the person
+        you are holding accountable.
       </p>
-
 
       <textarea
         value={
           message
         }
-
         onChange={
           (
             event
@@ -193,15 +188,12 @@ export default function ReportResponseForm({
               event.target.value
             )
         }
-
         maxLength={
           1000
         }
-
         rows={
           6
         }
-
         style={{
           width:
             "100%",
@@ -216,72 +208,39 @@ export default function ReportResponseForm({
             "8px",
 
           resize:
-            "vertical",
-
-          marginTop:
-            "10px"
+            "vertical"
         }}
       />
 
-
       <p>
-        {
-          message.length
-        }
-        /1000
+        {message.length}/1000
       </p>
-
 
       <button
         type="button"
-
         disabled={
           saving
         }
-
         onClick={
           submitResponse
         }
-
-        style={{
-          padding:
-            "10px 16px",
-
-          cursor:
-            saving
-              ? "not-allowed"
-              : "pointer"
-        }}
       >
-
         {
           saving
             ? "Saving..."
-            : initialMessage
+            : hasSavedResponse
               ? "Update Response"
               : "Send Response"
         }
-
       </button>
 
-
       {
-        status &&
-        (
-          <p
-            style={{
-              marginTop:
-                "10px"
-            }}
-          >
-            {
-              status
-            }
+        status && (
+          <p>
+            {status}
           </p>
         )
       }
-
     </section>
   );
-
 }

@@ -7,22 +7,50 @@ import {
   createHash
 } from "node:crypto";
 
-import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import {
+  prisma
+} from "@/lib/prisma";
+
+import {
+  createClient
+} from "@/lib/supabase/server";
 
 
-type UsageSession = {
-  id: string;
-  site: string;
-  type: "active" | "background_audio";
-  startTime: number;
-  endTime: number;
-  durationSeconds: number;
+type UsageSessionBody = {
+  id?: unknown;
+  site?: unknown;
+  type?: unknown;
+  startTime?: unknown;
+  endTime?: unknown;
+  durationSeconds?: unknown;
+  deviceId?: unknown;
 };
 
 
-// Find the identity making this request.
-async function getAuthenticatedIdentity(
+const ALLOWED_SITES =
+  new Set([
+    "youtube",
+    "instagram",
+    "netflix"
+  ]);
+
+
+const ALLOWED_TYPES =
+  new Set([
+    "active",
+    "background_audio"
+  ]);
+
+
+const MAX_FUTURE_SKEW_MS =
+  10 * 60 * 1000;
+
+
+// --------------------------------------------------
+// EXTENSION AUTH
+// --------------------------------------------------
+
+async function getExtensionIdentity(
   request: NextRequest
 ) {
   const authorization =
@@ -30,26 +58,35 @@ async function getAuthenticatedIdentity(
       "authorization"
     );
 
-
-  // Authenticate the Chrome extension.
-  // Authenticate the Chrome extension.
-if (
-  authorization?.startsWith(
-    "Bearer "
-  )
-) {
+  if (
+    !authorization?.startsWith(
+      "Bearer "
+    )
+  ) {
+    return null;
+  }
 
   const token =
     authorization
       .slice(7)
       .trim();
 
+  if (
+    !token
+  ) {
+    return null;
+  }
 
   const tokenHash =
-    createHash("sha256")
-      .update(token)
-      .digest("hex");
-
+    createHash(
+      "sha256"
+    )
+      .update(
+        token
+      )
+      .digest(
+        "hex"
+      );
 
   const device =
     await prisma.device.findUnique({
@@ -58,16 +95,12 @@ if (
       }
     });
 
-
-  // A Bearer token was supplied, so it must be
-  // a valid and non-revoked extension device.
   if (
     !device ||
     device.revokedAt
   ) {
     return null;
   }
-
 
   await prisma.device.update({
     where: {
@@ -81,184 +114,361 @@ if (
     }
   });
 
-
   return {
     userId:
       device.userId,
 
-    deviceId:
+    authenticatedDeviceId:
       device.id
   };
 }
 
 
-  // Authenticate a normal website user.
-  const supabase =
-    await createClient();
+// --------------------------------------------------
+// POST - EXTENSION ONLY
+// --------------------------------------------------
 
-
-  const {
-    data: {
-      user
-    }
-  } =
-    await supabase.auth.getUser();
-
-
-  if (!user) {
-    return null;
-  }
-
-
-  return {
-    userId:
-      user.id,
-
-    deviceId:
-      null
-  };
-}
-
-
-// Save a usage session.
 export async function POST(
   request: NextRequest
 ) {
   try {
     const identity =
-      await getAuthenticatedIdentity(
+      await getExtensionIdentity(
         request
       );
 
-
-    if (!identity) {
-      return NextResponse.json(
-        {
-          error: "Unauthorized"
-        },
-        {
-          status: 401
-        }
-      );
-    }
-
-
-    const {
-      userId,
-      deviceId
-    } = identity;
-
-
-    const session =
-      (await request.json()) as UsageSession;
-
-
-    // Validate required session data.
     if (
-      !session.id ||
-      !session.site ||
-      !session.type ||
-      !session.startTime ||
-      !session.endTime ||
-      session.durationSeconds < 0
+      !identity
     ) {
       return NextResponse.json(
         {
           error:
-            "Invalid usage session"
+            "Unauthorized"
         },
         {
-          status: 400
+          status:
+            401
         }
       );
     }
 
+    let body:
+      UsageSessionBody;
 
-    // Check whether this session was already uploaded.
-    const existingSession =
-      await prisma.usageSession.findUnique({
-        where: {
-          id:
-            session.id
+    try {
+      body =
+        await request.json() as
+          UsageSessionBody;
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Request body must be valid JSON."
+        },
+        {
+          status:
+            400
         }
-      });
+      );
+    }
 
+    const id =
+      typeof body.id ===
+        "string"
+        ? body.id.trim()
+        : "";
 
-    if (existingSession) {
+    const site =
+      typeof body.site ===
+        "string"
+        ? body.site.trim()
+        : "";
 
-      // Prevent another user from reusing this session ID.
+    const type =
+      typeof body.type ===
+        "string"
+        ? body.type.trim()
+        : "";
+
+    const startTime =
+      typeof body.startTime ===
+        "number"
+        ? body.startTime
+        : Number.NaN;
+
+    const endTime =
+      typeof body.endTime ===
+        "number"
+        ? body.endTime
+        : Number.NaN;
+
+    const durationSeconds =
+      typeof body.durationSeconds ===
+        "number"
+        ? body.durationSeconds
+        : Number.NaN;
+
+    const requestedSourceDeviceId =
+      typeof body.deviceId ===
+        "string" &&
+      body.deviceId.trim()
+        ? body.deviceId.trim()
+        : null;
+
+    if (
+      !id ||
+      id.length > 128 ||
+      !ALLOWED_SITES.has(
+        site
+      ) ||
+      !ALLOWED_TYPES.has(
+        type
+      ) ||
+      !Number.isFinite(
+        startTime
+      ) ||
+      !Number.isFinite(
+        endTime
+      ) ||
+      !Number.isInteger(
+        durationSeconds
+      ) ||
+      durationSeconds < 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid usage session."
+        },
+        {
+          status:
+            400
+        }
+      );
+    }
+
+    if (
+      endTime <=
+      startTime
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Session endTime must be after startTime."
+        },
+        {
+          status:
+            400
+        }
+      );
+    }
+
+    if (
+      endTime >
+      Date.now() +
+        MAX_FUTURE_SKEW_MS
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Session endTime is too far in the future."
+        },
+        {
+          status:
+            400
+        }
+      );
+    }
+
+    const calculatedDuration =
+      Math.floor(
+        (
+          endTime -
+          startTime
+        ) /
+        1000
+      );
+
+    if (
+      calculatedDuration !==
+      durationSeconds
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Session duration does not match its timestamps."
+        },
+        {
+          status:
+            400
+        }
+      );
+    }
+
+    /*
+      A relinked extension may upload a queued
+      session created by an older revoked device.
+
+      The current bearer token authenticates the user.
+      The historical source device is accepted only
+      if it belongs to that same user.
+    */
+    let sourceDeviceId =
+      identity
+        .authenticatedDeviceId;
+
+    if (
+      requestedSourceDeviceId
+    ) {
+      const sourceDevice =
+        await prisma.device.findUnique({
+          where: {
+            id:
+              requestedSourceDeviceId
+          },
+
+          select: {
+            id:
+              true,
+
+            userId:
+              true
+          }
+        });
+
       if (
-        existingSession.userId !==
-        userId
+        !sourceDevice ||
+        sourceDevice.userId !==
+          identity.userId
       ) {
         return NextResponse.json(
           {
             error:
-              "Session ID already belongs to another user"
+              "Invalid source device."
           },
           {
-            status: 409
+            status:
+              403
           }
         );
       }
 
+      sourceDeviceId =
+        sourceDevice.id;
+    }
 
-      // Retry of an already-saved session.
+    const existingSession =
+      await prisma.usageSession.findUnique({
+        where: {
+          id
+        }
+      });
+
+    if (
+      existingSession
+    ) {
+      if (
+        existingSession.userId !==
+        identity.userId
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Session ID already belongs to another user."
+          },
+          {
+            status:
+              409
+          }
+        );
+      }
+
+      const samePayload =
+        existingSession.site ===
+          site &&
+        existingSession.type ===
+          type &&
+        existingSession.startTime
+          .getTime() ===
+          startTime &&
+        existingSession.endTime
+          .getTime() ===
+          endTime &&
+        existingSession.durationSeconds ===
+          durationSeconds &&
+        existingSession.deviceId ===
+          sourceDeviceId;
+
+      if (
+        !samePayload
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Session ID already exists with different data."
+          },
+          {
+            status:
+              409
+          }
+        );
+      }
+
       return NextResponse.json(
         {
-          success: true,
+          success:
+            true,
+
           sessionId:
             existingSession.id
         },
         {
-          status: 200
+          status:
+            200
         }
       );
     }
 
-
-    // Save the new session.
     const savedSession =
       await prisma.usageSession.create({
         data: {
-          id:
-            session.id,
+          id,
 
-          site:
-            session.site,
+          site,
 
-          type:
-            session.type,
+          type,
 
           startTime:
             new Date(
-              session.startTime
+              startTime
             ),
 
           endTime:
             new Date(
-              session.endTime
+              endTime
             ),
 
-          durationSeconds:
-            session.durationSeconds,
+          durationSeconds,
 
-          userId,
+          userId:
+            identity.userId,
 
-          deviceId
+          deviceId:
+            sourceDeviceId
         }
       });
 
-
     return NextResponse.json(
       {
-        success: true,
+        success:
+          true,
 
         sessionId:
           savedSession.id
       },
       {
-        status: 201
+        status:
+          201
       }
     );
 
@@ -268,26 +478,28 @@ export async function POST(
       error
     );
 
-
     return NextResponse.json(
       {
         error:
-          "Failed to save usage session"
+          "Failed to save usage session."
       },
       {
-        status: 500
+        status:
+          500
       }
     );
   }
 }
 
 
-// Return the logged-in website user's sessions.
+// --------------------------------------------------
+// GET - WEBSITE USER
+// --------------------------------------------------
+
 export async function GET() {
   try {
     const supabase =
       await createClient();
-
 
     const {
       data: {
@@ -296,18 +508,20 @@ export async function GET() {
     } =
       await supabase.auth.getUser();
 
-
-    if (!user) {
+    if (
+      !user
+    ) {
       return NextResponse.json(
         {
-          error: "Unauthorized"
+          error:
+            "Unauthorized"
         },
         {
-          status: 401
+          status:
+            401
         }
       );
     }
-
 
     const sessions =
       await prisma.usageSession.findMany({
@@ -321,18 +535,20 @@ export async function GET() {
             "desc"
         },
 
-        take: 100
+        take:
+          100
       });
-
 
     return NextResponse.json(
       {
-        success: true,
+        success:
+          true,
 
         sessions
       },
       {
-        status: 200
+        status:
+          200
       }
     );
 
@@ -342,14 +558,14 @@ export async function GET() {
       error
     );
 
-
     return NextResponse.json(
       {
         error:
-          "Failed to fetch usage sessions"
+          "Failed to fetch usage sessions."
       },
       {
-        status: 500
+        status:
+          500
       }
     );
   }

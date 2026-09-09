@@ -1,4 +1,6 @@
-import { getTrackedSite } from "./utils.js";
+import {
+  getTrackedSite
+} from "./utils.js";
 
 import {
   startSession,
@@ -15,51 +17,87 @@ import {
   resumeTracking
 } from "./tracker.js";
 
-console.log("Accountability Tracker background script loaded");
+
+console.log(
+  "Accountability Tracker background script loaded"
+);
 
 
 // --------------------------------------------------
 // RECONCILIATION QUEUE
 // --------------------------------------------------
 
-// Ensures tracker updates run one after another instead of overlapping.
-let reconcileQueue: Promise<void> = Promise.resolve();
+let reconcileQueue:
+  Promise<void> =
+    Promise.resolve();
+
+
+function requestReconcile() {
+  reconcileQueue =
+    reconcileQueue
+      .then(
+        () =>
+          reconcileTrackerState()
+      )
+      .catch(
+        (error) => {
+          console.error(
+            "[Tracker] Reconciliation failed:",
+            error
+          );
+        }
+      );
+}
 
 
 // --------------------------------------------------
-// ACTIVE TAB TRACKING
+// ACTIVE TAB
 // --------------------------------------------------
 
 async function checkActiveTab() {
+  const focusedWindow =
+    await chrome.windows
+      .getLastFocused();
 
-  // Get the most recently focused Chrome window.
-  const focusedWindow = await chrome.windows.getLastFocused();
-
-  // Stop active tracking if Chrome itself is not focused.
-  if (!focusedWindow.focused) {
+  if (
+    !focusedWindow.focused ||
+    focusedWindow.id ===
+      undefined
+  ) {
     await endSession();
     return;
   }
 
-  // Get the selected tab from the focused Chrome window.
-  const tabs = await chrome.tabs.query({
-    active: true,
-    windowId: focusedWindow.id
-  });
+  const tabs =
+    await chrome.tabs.query({
+      active:
+        true,
 
-  const activeTab = tabs[0];
+      windowId:
+        focusedWindow.id
+    });
 
-  // Stop tracking if no active tab exists.
-  if (!activeTab) {
+  const activeTab =
+    tabs[0];
+
+  if (
+    !activeTab
+  ) {
     await endSession();
     return;
   }
 
-  // Check whether the active tab belongs to a tracked site.
-  const site = getTrackedSite(activeTab.url);
+  const site =
+    getTrackedSite(
+      activeTab.url
+    );
 
-  if (site) {
-    await startSession(site);
+  if (
+    site
+  ) {
+    await startSession(
+      site
+    );
   } else {
     await endSession();
   }
@@ -67,46 +105,60 @@ async function checkActiveTab() {
 
 
 // --------------------------------------------------
-// BACKGROUND AUDIO TRACKING
+// BACKGROUND AUDIO
 // --------------------------------------------------
 
 async function checkBackgroundAudio() {
+  const tabs =
+    await chrome.tabs.query(
+      {}
+    );
 
-  // Get all tabs from all Chrome windows.
-  const tabs = await chrome.tabs.query({});
+  const focusedWindow =
+    await chrome.windows
+      .getLastFocused();
 
-  // Get the most recently focused Chrome window.
-  const focusedWindow = await chrome.windows.getLastFocused();
+  const focusedWindowId =
+    focusedWindow.id;
 
-  const focusedWindowId = focusedWindow.id;
+  const currentlyAudibleTabIds =
+    new Set<number>();
 
-  // Store IDs of tracked tabs currently producing background audio.
-  const currentlyAudibleTabIds = new Set<number>();
-
-  for (const tab of tabs) {
-
-    // Skip tabs without an ID.
-    if (tab.id === undefined) {
+  for (
+    const tab
+    of tabs
+  ) {
+    if (
+      tab.id ===
+      undefined
+    ) {
       continue;
     }
 
-    // Check whether the tab belongs to a tracked site.
-    const site = getTrackedSite(tab.url);
+    const site =
+      getTrackedSite(
+        tab.url
+      );
 
-    if (!site) {
+    if (
+      !site
+    ) {
       continue;
     }
 
-    // Determine whether the user is actually viewing this tab.
     const isActuallyVisible =
       focusedWindow.focused &&
       tab.active &&
-      tab.windowId === focusedWindowId;
+      tab.windowId ===
+        focusedWindowId;
 
-    // Track audible tabs that are not currently visible.
-    if (tab.audible && !isActuallyVisible) {
-
-      currentlyAudibleTabIds.add(tab.id);
+    if (
+      tab.audible &&
+      !isActuallyVisible
+    ) {
+      currentlyAudibleTabIds.add(
+        tab.id
+      );
 
       await startBackgroundAudio(
         tab.id,
@@ -115,7 +167,6 @@ async function checkBackgroundAudio() {
     }
   }
 
-  // End background sessions that are no longer occurring.
   await stopMissingBackgroundAudio(
     currentlyAudibleTabIds
   );
@@ -123,30 +174,21 @@ async function checkBackgroundAudio() {
 
 
 // --------------------------------------------------
-// STATE RECONCILIATION
+// FULL RECONCILIATION
 // --------------------------------------------------
 
-// Recalculate the entire tracker state from the current browser state.
 async function reconcileTrackerState() {
-
-  const paused =
-    await isTrackingPaused();
-
-
-  if (paused) {
+  if (
+    await isTrackingPaused()
+  ) {
     await endSession();
 
     await stopMissingBackgroundAudio(
       new Set<number>()
     );
 
-    console.log(
-      "[Tracker] Tracking is paused"
-    );
-
     return;
   }
-
 
   await checkActiveTab();
 
@@ -156,141 +198,112 @@ async function reconcileTrackerState() {
 }
 
 
-// Add a reconciliation job to the queue.
-function requestReconcile() {
-
-  reconcileQueue = reconcileQueue
-    .then(() => reconcileTrackerState())
-    .catch((error) => {
-      console.error(
-        "[Tracker] Reconciliation failed:",
-        error
-      );
-    });
-}
-
-
 // --------------------------------------------------
-// TAB SWITCH
+// BROWSER EVENTS
 // --------------------------------------------------
 
-chrome.tabs.onActivated.addListener(() => {
-
-  // Recalculate tracker state after switching tabs.
-  requestReconcile();
-});
-
-
-// --------------------------------------------------
-// TAB UPDATE
-// --------------------------------------------------
-
-chrome.tabs.onUpdated.addListener(
-  (_tabId, changeInfo, tab) => {
-
-    // Ignore updates that cannot affect tracking.
-    const relevantUpdate =
-      changeInfo.audible !== undefined ||
-      changeInfo.url !== undefined;
-
-    if (!relevantUpdate) {
-      return;
-    }
-
-    // Recalculate tracker state after a relevant tab change.
+chrome.tabs.onActivated.addListener(
+  () => {
     requestReconcile();
   }
 );
 
 
-// --------------------------------------------------
-// CHROME WINDOW FOCUS
-// --------------------------------------------------
+chrome.tabs.onUpdated.addListener(
+  (
+    _tabId,
+    changeInfo
+  ) => {
+    const relevantUpdate =
+      changeInfo.audible !==
+        undefined ||
+      changeInfo.url !==
+        undefined;
+
+    if (
+      relevantUpdate
+    ) {
+      requestReconcile();
+    }
+  }
+);
+
+
+/*
+  Important for background-audio sessions:
+  closing an audible tab must immediately end it.
+*/
+chrome.tabs.onRemoved.addListener(
+  () => {
+    requestReconcile();
+  }
+);
+
 
 chrome.windows.onFocusChanged.addListener(
   () => {
-
-    // Recalculate state whenever Chrome gains or loses focus.
     requestReconcile();
   }
 );
 
+
 // --------------------------------------------------
-// PERIODIC SYNC
+// PERIODIC JOBS
 // --------------------------------------------------
 
 const SYNC_ALARM_NAME =
   "sync-usage-sessions";
-
-
-// Create a periodic alarm for retrying queued sessions.
-chrome.alarms.create(
-  SYNC_ALARM_NAME,
-  {
-    periodInMinutes: 5
-  }
-);
 
 const HEARTBEAT_ALARM_NAME =
   "device-heartbeat";
 
 
 chrome.alarms.create(
-  HEARTBEAT_ALARM_NAME,
+  SYNC_ALARM_NAME,
   {
-    periodInMinutes: 5
+    periodInMinutes:
+      5
   }
 );
 
-chrome.alarms.onAlarm.addListener(
-  async (alarm) => {
 
+chrome.alarms.create(
+  HEARTBEAT_ALARM_NAME,
+  {
+    periodInMinutes:
+      5
+  }
+);
+
+
+chrome.alarms.onAlarm.addListener(
+  async (
+    alarm
+  ) => {
     if (
       alarm.name ===
       SYNC_ALARM_NAME
     ) {
-
-      console.log(
-        "[Tracker] Periodic checkpoint + sync triggered"
-      );
-
-
-      // Save chunks from sessions that are still running.
       await checkpointCurrentSessions();
 
-
-      // Upload everything waiting in the local queue.
       await syncQueuedSessions();
-
 
       return;
     }
-
 
     if (
       alarm.name ===
       HEARTBEAT_ALARM_NAME
     ) {
-      console.log(
-        "[Tracker] Heartbeat triggered"
-      );
-
       await sendHeartbeat();
     }
   }
 );
 
-// --------------------------------------------------
-// TRACKER
-// --------------------------------------------------
 
-
-initializeTracker().catch((error) => {
-  console.error(
-    "[Tracker] Initialization failed:",
-    error
-  );
-});
+// --------------------------------------------------
+// MESSAGES
+// --------------------------------------------------
 
 chrome.runtime.onMessage.addListener(
   (
@@ -298,112 +311,193 @@ chrome.runtime.onMessage.addListener(
     _sender,
     sendResponse
   ) => {
-
     if (
       message.type ===
       "PAUSE_TRACKING"
     ) {
-      pauseTracking()
-        .then(async () => {
-          await reconcileTrackerState();
+      (
+        async () => {
+          try {
+            await pauseTracking();
 
-          sendResponse({
-            success: true
-          });
-        });
+            await reconcileTrackerState();
+
+            sendResponse({
+              success:
+                true
+            });
+          } catch (error) {
+            console.error(
+              "[Tracker] Pause failed:",
+              error
+            );
+
+            sendResponse({
+              success:
+                false
+            });
+          }
+        }
+      )();
 
       return true;
     }
+
 
     if (
       message.type ===
       "RESUME_TRACKING"
     ) {
-      resumeTracking()
-        .then(async () => {
-          await reconcileTrackerState();
+      (
+        async () => {
+          try {
+            await resumeTracking();
 
-          sendResponse({
-            success: true
-          });
-        });
+            await reconcileTrackerState();
+
+            sendResponse({
+              success:
+                true
+            });
+          } catch (error) {
+            console.error(
+              "[Tracker] Resume failed:",
+              error
+            );
+
+            sendResponse({
+              success:
+                false
+            });
+          }
+        }
+      )();
 
       return true;
     }
+
+
+    /*
+      Verify a candidate token without replacing
+      the currently working token first.
+    */
     if (
       message.type ===
       "DEVICE_LINKED"
     ) {
+      (
+        async () => {
+          try {
+            const candidateToken =
+              typeof message.token ===
+                "string"
+                ? message.token.trim()
+                : "";
 
-      (async () => {
+            if (
+              !/^[a-f0-9]{64}$/i.test(
+                candidateToken
+              )
+            ) {
+              sendResponse({
+                success:
+                  false
+              });
 
-        try {
+              return;
+            }
 
-          const candidateToken =
-            typeof message.token === "string"
-              ? message.token.trim()
-              : "";
+            const result =
+              await sendHeartbeat(
+                candidateToken
+              );
 
+            if (
+              !result.success ||
+              !result.deviceId
+            ) {
+              sendResponse({
+                success:
+                  false
+              });
 
-          if (
-            !/^[a-f0-9]{64}$/i.test(
-              candidateToken
-            )
-          ) {
+              return;
+            }
 
             sendResponse({
               success:
-                false
+                true,
+
+              deviceId:
+                result.deviceId
             });
 
-            return;
-          }
-
-
-          const verified =
-            await sendHeartbeat(
-              candidateToken
+          } catch (error) {
+            console.error(
+              "[Tracker] Candidate device verification failed:",
+              error
             );
 
+            sendResponse({
+              success:
+                false
+            });
+          }
+        }
+      )();
 
-          if (!verified) {
+      return true;
+    }
+
+
+    /*
+      The content script sends this only after
+      the verified token has been promoted to
+      the real local deviceToken.
+    */
+    if (
+      message.type ===
+      "DEVICE_LINK_COMMITTED"
+    ) {
+      (
+        async () => {
+          try {
+            /*
+              Split any still-running session at the
+              relink boundary. The completed chunk
+              keeps its original deviceId; the new
+              chunk uses the newly linked device.
+            */
+            await checkpointCurrentSessions();
+
+            await syncQueuedSessions();
+
+            await sendHeartbeat();
+
+            sendResponse({
+              success:
+                true
+            });
+
+          } catch (error) {
+            console.error(
+              "[Tracker] Post-link sync failed:",
+              error
+            );
 
             sendResponse({
               success:
                 false
             });
-
-            return;
           }
-
-
-          sendResponse({
-            success:
-              true
-          });
-
-        } catch (error) {
-
-          console.error(
-            "[Tracker] Device relink verification failed:",
-            error
-          );
-
-
-          sendResponse({
-            success:
-              false
-          });
-
         }
-
-      })();
-
+      )();
 
       return true;
     }
   }
 );
+
 
 // --------------------------------------------------
 // INITIALIZATION
@@ -412,11 +506,25 @@ chrome.runtime.onMessage.addListener(
 async function initializeTracker() {
   await restoreTrackerState();
 
-  await reconcileTrackerState();
-
+  /*
+    A normal heartbeat also backfills
+    linkedDeviceId for older installations.
+  */
   await sendHeartbeat();
+
+  await reconcileTrackerState();
 
   console.log(
     "[Tracker] Initialization complete"
   );
 }
+
+
+initializeTracker().catch(
+  (error) => {
+    console.error(
+      "[Tracker] Initialization failed:",
+      error
+    );
+  }
+);

@@ -7,16 +7,29 @@ import {
   createHash
 } from "node:crypto";
 
-import { prisma } from "@/lib/prisma";
+import {
+  prisma
+} from "@/lib/prisma";
 
 
 type HeartbeatBody = {
-  incognitoEnabled?: boolean;
-  eventType?: string;
+  incognitoEnabled?: unknown;
+  eventType?: unknown;
 };
 
 
-// Update the device heartbeat.
+const ALLOWED_EVENT_TYPES =
+  new Set([
+    "heartbeat",
+    "tracking_paused",
+    "tracking_resumed"
+  ]);
+
+
+// --------------------------------------------------
+// DEVICE HEARTBEAT / INTEGRITY EVENT
+// --------------------------------------------------
+
 export async function POST(
   request: NextRequest
 ) {
@@ -26,7 +39,6 @@ export async function POST(
         "authorization"
       );
 
-
     if (
       !authorization?.startsWith(
         "Bearer "
@@ -34,26 +46,46 @@ export async function POST(
     ) {
       return NextResponse.json(
         {
-          error: "Unauthorized"
+          error:
+            "Unauthorized"
         },
         {
-          status: 401
+          status:
+            401
         }
       );
     }
-
 
     const token =
       authorization
         .slice(7)
         .trim();
 
+    if (
+      !token
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Unauthorized"
+        },
+        {
+          status:
+            401
+        }
+      );
+    }
 
     const tokenHash =
-      createHash("sha256")
-        .update(token)
-        .digest("hex");
-
+      createHash(
+        "sha256"
+      )
+        .update(
+          token
+        )
+        .digest(
+          "hex"
+        );
 
     const device =
       await prisma.device.findUnique({
@@ -62,36 +94,83 @@ export async function POST(
         }
       });
 
-
     if (
       !device ||
       device.revokedAt
     ) {
       return NextResponse.json(
         {
-          error: "Invalid device"
+          error:
+            "Invalid device"
         },
         {
-          status: 401
+          status:
+            401
         }
       );
     }
 
-
-    let body: HeartbeatBody = {};
-
+    let body:
+      HeartbeatBody = {};
 
     try {
       body =
-        await request.json();
+        await request.json() as
+          HeartbeatBody;
     } catch {
-      // Allow heartbeat requests without a body.
+      // A body is optional.
     }
 
+    const eventType =
+      typeof body.eventType ===
+        "string"
+        ? body.eventType
+            .trim()
+        : "heartbeat";
+
+    if (
+      !ALLOWED_EVENT_TYPES.has(
+        eventType
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid tracking event type."
+        },
+        {
+          status:
+            400
+        }
+      );
+    }
+
+    if (
+      body.incognitoEnabled !==
+        undefined &&
+      typeof body.incognitoEnabled !==
+        "boolean"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "incognitoEnabled must be a boolean."
+        },
+        {
+          status:
+            400
+        }
+      );
+    }
+
+    const incognitoEnabled =
+      typeof body.incognitoEnabled ===
+        "boolean"
+        ? body.incognitoEnabled
+        : undefined;
 
     const now =
       new Date();
-
 
     const updatedDevice =
       await prisma.device.update({
@@ -104,38 +183,42 @@ export async function POST(
           lastSeenAt:
             now,
 
-          incognitoEnabled:
-            body.incognitoEnabled,
-
-          // First successful heartbeat confirms the device.
           confirmedAt:
             device.confirmedAt ??
-            now
+            now,
+
+          ...(
+            incognitoEnabled !==
+              undefined
+              ? {
+                  incognitoEnabled
+                }
+              : {}
+          )
         }
       });
-
 
     await prisma.trackingEvent.create({
       data: {
         type:
-          body.eventType ??
-          "heartbeat",
+          eventType,
 
         createdAt:
           now,
 
         incognitoEnabled:
-          body.incognitoEnabled,
+          incognitoEnabled ??
+          null,
 
         deviceId:
           device.id
       }
     });
 
-
     return NextResponse.json(
       {
-        success: true,
+        success:
+          true,
 
         deviceId:
           updatedDevice.id,
@@ -150,7 +233,8 @@ export async function POST(
           updatedDevice.confirmedAt
       },
       {
-        status: 200
+        status:
+          200
       }
     );
 
@@ -160,14 +244,14 @@ export async function POST(
       error
     );
 
-
     return NextResponse.json(
       {
         error:
-          "Heartbeat failed"
+          "Heartbeat failed."
       },
       {
-        status: 500
+        status:
+          500
       }
     );
   }

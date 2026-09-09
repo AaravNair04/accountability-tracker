@@ -119,6 +119,16 @@ export async function POST() {
         createdAt: {
           lt:
             unconfirmedCutoff
+        },
+
+        // Only remove abandoned device rows that
+        // never produced any historical data.
+        trackingEvents: {
+          none: {}
+        },
+
+        sessions: {
+          none: {}
         }
       }
     });
