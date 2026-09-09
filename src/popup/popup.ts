@@ -431,7 +431,7 @@ linkDeviceButton.addEventListener(
 
       await chrome.tabs.create({
         url:
-          "http://localhost:3000/devices/link"
+          "https://accountability-tracker-eosin.vercel.app/devices/link"
       });
 
 

@@ -47,10 +47,10 @@ const TRACKING_PAUSED_KEY =
   "trackingPaused";
 
 const API_URL =
-  "http://localhost:3000/api/usage-sessions";
+  "https://accountability-tracker-eosin.vercel.app/api/usage-sessions";
 
 const HEARTBEAT_URL =
-  "http://localhost:3000/api/devices/heartbeat";
+  "https://accountability-tracker-eosin.vercel.app/api/devices/heartbeat"
 
 let activeSession:
   SessionState | null =

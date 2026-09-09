@@ -16,7 +16,7 @@ window.addEventListener(
 
     if (
       event.origin !==
-      "http://localhost:3000"
+      "https://accountability-tracker-eosin.vercel.app"
     ) {
       return;
     }
