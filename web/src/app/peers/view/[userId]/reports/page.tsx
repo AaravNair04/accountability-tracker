@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import {
+  SiteUsageBreakdown,
+  TrackingIntegrityBreakdown,
+  formatReportDuration
+} from "@/components/ReportBreakdowns";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -10,39 +15,6 @@ type Props = {
     userId: string;
   }>;
 };
-
-
-function formatSeconds(
-  seconds: number
-) {
-
-  const hours =
-    Math.floor(
-      seconds / 3600
-    );
-
-  const minutes =
-    Math.floor(
-      (seconds % 3600) / 60
-    );
-
-
-  if (hours > 0) {
-
-    return `${hours}h ${minutes}m`;
-
-  }
-
-
-  if (minutes > 0) {
-
-    return `${minutes}m`;
-
-  }
-
-
-  return `${seconds}s`;
-}
 
 
 function formatReportDate(
@@ -232,35 +204,6 @@ export default async function PeerReportsPage({
             reports.map(
               (report) => {
 
-                const coverageTotal =
-                  report.goodSeconds +
-                  report.limitedSeconds +
-                  report.pausedSeconds +
-                  report.unknownSeconds;
-
-
-                const percentage =
-                  (
-                    seconds: number
-                  ) => {
-
-                    if (
-                      coverageTotal === 0
-                    ) {
-                      return 0;
-                    }
-
-
-                    return Math.round(
-                      (
-                        seconds /
-                        coverageTotal
-                      ) * 100
-                    );
-
-                  };
-
-
                 const siteUsage =
                   report.siteUsage &&
                   typeof report.siteUsage ===
@@ -314,12 +257,12 @@ export default async function PeerReportsPage({
 
                     <p>
                       Total tracked usage:{" "}
-                      <strong>
-                        {
-                          formatSeconds(
-                            report.totalSeconds
-                          )
-                        }
+                          <strong>
+                            {
+                              formatReportDuration(
+                                report.totalSeconds
+                              )
+                            }
                       </strong>
                     </p>
 
@@ -327,7 +270,7 @@ export default async function PeerReportsPage({
                     <p>
                       Active usage:{" "}
                       {
-                        formatSeconds(
+                        formatReportDuration(
                           report.activeSeconds
                         )
                       }
@@ -337,7 +280,7 @@ export default async function PeerReportsPage({
                     <p>
                       Background audio:{" "}
                       {
-                        formatSeconds(
+                        formatReportDuration(
                           report.backgroundAudioSeconds
                         )
                       }
@@ -349,49 +292,11 @@ export default async function PeerReportsPage({
                     </h3>
 
 
-                    {
-                      Object.keys(
+                    <SiteUsageBreakdown
+                      siteUsage={
                         siteUsage
-                      ).length === 0
-                        ? (
-
-                          <p>
-                            No tracked site usage.
-                          </p>
-
-                        )
-                        : (
-
-                          <ul>
-
-                            {
-                              Object.entries(
-                                siteUsage
-                              ).map(
-                                ([
-                                  site,
-                                  seconds
-                                ]) => (
-
-                                  <li
-                                    key={site}
-                                  >
-                                    {site}:{" "}
-                                    {
-                                      formatSeconds(
-                                        seconds
-                                      )
-                                    }
-                                  </li>
-
-                                )
-                              )
-                            }
-
-                          </ul>
-
-                        )
-                    }
+                      }
+                    />
 
 
                     <h3>
@@ -399,48 +304,20 @@ export default async function PeerReportsPage({
                     </h3>
 
 
-                    <p>
-                      Good:{" "}
-                      {
-                        percentage(
-                          report.goodSeconds
-                        )
+                    <TrackingIntegrityBreakdown
+                      goodSeconds={
+                        report.goodSeconds
                       }
-                      %
-                    </p>
-
-
-                    <p>
-                      Limited:{" "}
-                      {
-                        percentage(
-                          report.limitedSeconds
-                        )
+                      limitedSeconds={
+                        report.limitedSeconds
                       }
-                      %
-                    </p>
-
-
-                    <p>
-                      Paused:{" "}
-                      {
-                        percentage(
-                          report.pausedSeconds
-                        )
+                      pausedSeconds={
+                        report.pausedSeconds
                       }
-                      %
-                    </p>
-
-
-                    <p>
-                      Unknown:{" "}
-                      {
-                        percentage(
-                          report.unknownSeconds
-                        )
+                      unknownSeconds={
+                        report.unknownSeconds
                       }
-                      %
-                    </p>
+                    />
 
 
                     <div

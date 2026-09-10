@@ -1,41 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import {
+  SiteUsageBreakdown,
+  TrackingIntegrityBreakdown,
+  formatReportDuration
+} from "@/components/ReportBreakdowns";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-
-
-// --------------------------------------------------
-// FORMAT DURATION
-// --------------------------------------------------
-
-function formatDuration(
-  seconds: number
-) {
-
-  const hours =
-    Math.floor(
-      seconds / 3600
-    );
-
-  const minutes =
-    Math.floor(
-      (seconds % 3600) / 60
-    );
-
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-
-
-  if (minutes > 0) {
-    return `${minutes}m`;
-  }
-
-
-  return `${seconds}s`;
-}
 
 
 // --------------------------------------------------
@@ -241,41 +213,6 @@ export default async function ReportsPage() {
               {
                 reports.map(
                   (report) => {
-
-                    // --------------------------------------------------
-                    // COVERAGE TOTAL
-                    // --------------------------------------------------
-
-                    const totalCoverage =
-                      report.goodSeconds +
-                      report.limitedSeconds +
-                      report.pausedSeconds +
-                      report.unknownSeconds;
-
-
-                    const goodPercentage =
-                      totalCoverage > 0
-                        ? Math.round(
-                            (
-                              report.goodSeconds /
-                              totalCoverage
-                            ) *
-                            100
-                          )
-                        : 0;
-
-
-                    const unknownPercentage =
-                      totalCoverage > 0
-                        ? Math.round(
-                            (
-                              report.unknownSeconds /
-                              totalCoverage
-                            ) *
-                            100
-                          )
-                        : 0;
-
 
                     // --------------------------------------------------
                     // SITE USAGE
@@ -484,7 +421,7 @@ export default async function ReportsPage() {
                           </strong>{" "}
 
                           {
-                            formatDuration(
+                            formatReportDuration(
                               report.totalSeconds
                             )
                           }
@@ -497,7 +434,7 @@ export default async function ReportsPage() {
                           </strong>{" "}
 
                           {
-                            formatDuration(
+                            formatReportDuration(
                               report.activeSeconds
                             )
                           }
@@ -510,7 +447,7 @@ export default async function ReportsPage() {
                           </strong>{" "}
 
                           {
-                            formatDuration(
+                            formatReportDuration(
                               report.backgroundAudioSeconds
                             )
                           }
@@ -527,95 +464,11 @@ export default async function ReportsPage() {
                         </h3>
 
 
-                        {
-                          Object.keys(
+                        <SiteUsageBreakdown
+                          siteUsage={
                             siteUsage
-                          ).length === 0
-                            ? (
-
-                              <p>
-                                No tracked site usage.
-                              </p>
-
-                            )
-                            : (
-
-                              <div>
-
-                                {
-                                  Object.entries(
-                                    siteUsage
-                                  )
-                                    .filter(
-                                      (
-                                        entry
-                                      ) =>
-                                        typeof entry[1] ===
-                                          "number"
-                                    )
-                                    .sort(
-                                      (
-                                        first,
-                                        second
-                                      ) =>
-                                        (
-                                          second[1] as number
-                                        ) -
-                                        (
-                                          first[1] as number
-                                        )
-                                    )
-                                    .map(
-                                      ([
-                                        site,
-                                        seconds
-                                      ]) => (
-
-                                        <div
-                                          key={
-                                            site
-                                          }
-
-                                          style={{
-                                            display:
-                                              "flex",
-
-                                            justifyContent:
-                                              "space-between",
-
-                                            maxWidth:
-                                              "400px",
-
-                                            padding:
-                                              "5px 0"
-                                          }}
-                                        >
-
-                                          <span>
-                                            {
-                                              site
-                                            }
-                                          </span>
-
-
-                                          <strong>
-                                            {
-                                              formatDuration(
-                                                seconds as number
-                                              )
-                                            }
-                                          </strong>
-
-                                        </div>
-
-                                      )
-                                    )
-                                }
-
-                              </div>
-
-                            )
-                        }
+                          }
+                        />
 
 
                         <hr />
@@ -633,70 +486,20 @@ export default async function ReportsPage() {
                         </h3>
 
 
-                        <p>
-                          Good:{" "}
-
-                          <strong>
-                            {
-                              formatDuration(
-                                report.goodSeconds
-                              )
-                            }
-                          </strong>
-
-                          {" "}
-                          (
-                          {
-                            goodPercentage
+                        <TrackingIntegrityBreakdown
+                          goodSeconds={
+                            report.goodSeconds
                           }
-                          %)
-                        </p>
-
-
-                        <p>
-                          Limited:{" "}
-
-                          <strong>
-                            {
-                              formatDuration(
-                                report.limitedSeconds
-                              )
-                            }
-                          </strong>
-                        </p>
-
-
-                        <p>
-                          Paused:{" "}
-
-                          <strong>
-                            {
-                              formatDuration(
-                                report.pausedSeconds
-                              )
-                            }
-                          </strong>
-                        </p>
-
-
-                        <p>
-                          Unknown:{" "}
-
-                          <strong>
-                            {
-                              formatDuration(
-                                report.unknownSeconds
-                              )
-                            }
-                          </strong>
-
-                          {" "}
-                          (
-                          {
-                            unknownPercentage
+                          limitedSeconds={
+                            report.limitedSeconds
                           }
-                          %)
-                        </p>
+                          pausedSeconds={
+                            report.pausedSeconds
+                          }
+                          unknownSeconds={
+                            report.unknownSeconds
+                          }
+                        />
 
 
                         <hr />
