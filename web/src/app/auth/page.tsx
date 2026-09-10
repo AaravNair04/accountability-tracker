@@ -10,9 +10,6 @@ export default function AuthPage() {
   const router =
     useRouter();
 
-  const supabase =
-    createClient();
-
   const [email, setEmail] =
     useState("");
 
@@ -30,6 +27,9 @@ export default function AuthPage() {
   async function handleSignUp() {
     setLoading(true);
     setMessage("");
+
+    const supabase =
+      createClient();
 
     const { error } =
       await supabase.auth.signUp({
@@ -61,6 +61,9 @@ export default function AuthPage() {
   async function handleLogin() {
     setLoading(true);
     setMessage("");
+
+    const supabase =
+      createClient();
 
     const { error } =
       await supabase.auth.signInWithPassword({
