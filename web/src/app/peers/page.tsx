@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import PeerInviteForm from "./PeerInviteForm";
 import PeerResponseButtons from "./PeerResponseButtons";
+import RemovePeerButton from "./RemovePeerButton";
 
 
 function formatReportDate(
@@ -386,7 +387,9 @@ export default async function PeersPage() {
 
                         {
                           relationship.status ===
-                            "accepted" && (
+                            "accepted" &&
+                          relationship.revokedAt ===
+                            null && (
 
                             <>
                               <p>
@@ -492,6 +495,19 @@ export default async function PeersPage() {
                                   )
                                 }
                               </div>
+
+
+                              <RemovePeerButton
+                                relationshipId={
+                                  relationship.id
+                                }
+
+                                peerEmail={
+                                  relationship
+                                    .peer
+                                    .email
+                                }
+                              />
                             </>
 
                           )
@@ -505,6 +521,23 @@ export default async function PeersPage() {
                             <p>
                               This invitation was
                               rejected.
+                            </p>
+
+                          )
+                        }
+
+
+                        {
+                          (
+                            relationship.revokedAt ||
+                            relationship.status ===
+                              "revoked"
+                          ) && (
+
+                            <p>
+                              Access revoked. This peer
+                              can no longer view your
+                              accountability reports.
                             </p>
 
                           )
@@ -616,7 +649,9 @@ export default async function PeersPage() {
 
                         {
                           relationship.status ===
-                            "accepted" && (
+                            "accepted" &&
+                          relationship.revokedAt ===
+                            null && (
 
                             <Link
                               href={
@@ -644,6 +679,22 @@ export default async function PeersPage() {
                             >
                               View Accountability
                             </Link>
+
+                          )
+                        }
+
+
+                        {
+                          (
+                            relationship.revokedAt ||
+                            relationship.status ===
+                              "revoked"
+                          ) && (
+
+                            <p>
+                              This accountability
+                              relationship was removed.
+                            </p>
 
                           )
                         }

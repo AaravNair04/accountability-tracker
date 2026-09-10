@@ -44,7 +44,24 @@ export default async function InboxPage() {
 
       where: {
         peerId:
-          user.id
+          user.id,
+
+        report: {
+          user: {
+            peerRelationships: {
+              some: {
+                peerId:
+                  user.id,
+
+                status:
+                  "accepted",
+
+                revokedAt:
+                  null
+              }
+            }
+          }
+        }
       },
 
       include: {

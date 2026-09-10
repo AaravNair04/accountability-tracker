@@ -176,6 +176,50 @@ export async function POST(
 
     if (existingRelationship) {
 
+      if (
+        existingRelationship.revokedAt ||
+        existingRelationship.status ===
+          "revoked"
+      ) {
+
+        const updatedRelationship =
+          await prisma.trustedPeer.update({
+
+            where: {
+              id:
+                existingRelationship.id
+            },
+
+            data: {
+              status:
+                "pending",
+
+              revokedAt:
+                null
+            }
+
+          });
+
+
+        return NextResponse.json(
+          {
+            success:
+              true,
+
+            message:
+              "Invitation sent again.",
+
+            invitation:
+              updatedRelationship
+          },
+          {
+            status: 200
+          }
+        );
+
+      }
+
+
       // Invitation is already waiting.
       if (
         existingRelationship.status ===
@@ -230,7 +274,10 @@ export async function POST(
 
             data: {
               status:
-                "pending"
+                "pending",
+
+              revokedAt:
+                null
             }
 
           });

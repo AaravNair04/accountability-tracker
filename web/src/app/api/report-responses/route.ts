@@ -205,6 +205,9 @@ export async function POST(
 
         select: {
           status:
+            true,
+
+          revokedAt:
             true
         }
 
@@ -214,7 +217,9 @@ export async function POST(
     if (
       !relationship ||
       relationship.status !==
-        "accepted"
+        "accepted" ||
+      relationship.revokedAt !==
+        null
     ) {
 
       return NextResponse.json(

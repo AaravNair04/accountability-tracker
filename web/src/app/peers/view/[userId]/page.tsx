@@ -170,7 +170,9 @@ export default async function PeerViewPage({
   if (
     !relationship ||
     relationship.status !==
-      "accepted"
+      "accepted" ||
+    relationship.revokedAt !==
+      null
   ) {
     return (
       <main

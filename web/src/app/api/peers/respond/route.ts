@@ -146,14 +146,15 @@ export async function POST(
 
     // Only pending invitations can be answered.
     if (
+      invitation.revokedAt ||
       invitation.status !==
-      "pending"
+        "pending"
     ) {
 
       return NextResponse.json(
         {
           error:
-            "This invitation has already been answered."
+            "This invitation is no longer active."
         },
         {
           status: 409

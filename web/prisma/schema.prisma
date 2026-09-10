@@ -77,6 +77,7 @@ model TrustedPeer {
   status    String   @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  revokedAt DateTime?
   ownerId   String
   peerId    String
   owner     User     @relation("PeerOwner", fields: [ownerId], references: [id], onDelete: Cascade)

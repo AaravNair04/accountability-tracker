@@ -335,7 +335,10 @@ export async function generateDailyReport(
             userId,
 
           status:
-            "accepted"
+            "accepted",
+
+          revokedAt:
+            null
         },
 
         select: {

@@ -136,7 +136,9 @@ export default async function PeerReportPage({
   if (
     !relationship ||
     relationship.status !==
-      "accepted"
+      "accepted" ||
+    relationship.revokedAt !==
+      null
   ) {
 
     return (
