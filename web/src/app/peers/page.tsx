@@ -262,6 +262,13 @@ export default async function PeersPage() {
       </p>
 
 
+      <p>
+        <Link href="/peers/preview">
+          Preview What Peers See
+        </Link>
+      </p>
+
+
       <hr
         style={{
           margin:

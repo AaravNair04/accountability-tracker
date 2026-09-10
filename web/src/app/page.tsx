@@ -455,6 +455,12 @@ export default async function Home() {
               </Link>
             </p>
 
+            <p>
+              <Link href="/peers/preview">
+                Preview Peer View
+              </Link>
+            </p>
+
             <NewPeerResponsesLink
               userId={
                 user.id
