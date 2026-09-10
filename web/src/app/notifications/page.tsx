@@ -195,6 +195,9 @@ export default async function NotificationsPage() {
 
           report: {
             select: {
+              id:
+                true,
+
               reportDate:
                 true
             }
@@ -431,7 +434,11 @@ export default async function NotificationsPage() {
                       }
                     </p>
 
-                    <Link href="/reports">
+                    <Link
+                      href={
+                        `/reports#report-${response.report.id}`
+                      }
+                    >
                       View response
                     </Link>
                   </NotificationCard>

@@ -246,6 +246,9 @@ export default async function ReportsPage() {
                     return (
 
                       <article
+                        id={
+                          `report-${report.id}`
+                        }
                         key={
                           report.id
                         }
