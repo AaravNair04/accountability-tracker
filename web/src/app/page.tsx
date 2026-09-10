@@ -171,9 +171,73 @@ export default async function Home() {
           user.id,
 
         viewedAt:
+          null,
+
+        report: {
+          user: {
+            peerRelationships: {
+              some: {
+                peerId:
+                  user.id,
+
+                status:
+                  "accepted",
+
+                revokedAt:
+                  null
+              }
+            }
+          }
+        }
+      }
+    });
+
+  const pendingInvitationCount =
+    await prisma.trustedPeer.count({
+      where: {
+        peerId:
+          user.id,
+
+        status:
+          "pending",
+
+        revokedAt:
           null
       }
     });
+
+  const newPeerResponseCount =
+    await prisma.reportResponse.count({
+      where: {
+        ownerViewedAt:
+          null,
+
+        report: {
+          userId:
+            user.id
+        }
+      }
+    });
+
+  const sentPendingInvitationCount =
+    await prisma.trustedPeer.count({
+      where: {
+        ownerId:
+          user.id,
+
+        status:
+          "pending",
+
+        revokedAt:
+          null
+      }
+    });
+
+  const notificationCount =
+    unreadReportCount +
+    pendingInvitationCount +
+    newPeerResponseCount +
+    sentPendingInvitationCount;
 
   const now =
     new Date();
@@ -401,6 +465,17 @@ export default async function Home() {
         <strong>
           {profile.timezone}
         </strong>
+      </p>
+
+      <p>
+        <Link href="/notifications">
+          Notifications
+          {
+            notificationCount > 0
+              ? ` (${notificationCount})`
+              : ""
+          }
+        </Link>
       </p>
 
 
