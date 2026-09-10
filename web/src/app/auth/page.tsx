@@ -1,11 +1,15 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 
 
 export default function AuthPage() {
+  const router =
+    useRouter();
+
   const supabase =
     createClient();
 
@@ -77,7 +81,7 @@ export default function AuthPage() {
 
 
     // Send the authenticated user to the dashboard.
-    window.location.href = "/";
+    router.replace("/");
   }
 
 

@@ -22,6 +22,10 @@ import {
   getCurrentTrackingStatus
 } from "@/lib/reports/trackingCoverage";
 
+import {
+  groupContinuousUsageSessions
+} from "@/lib/usage/activitySegments";
+
 import GenerateReportButton from "./GenerateReportButton";
 import NewPeerResponsesLink from "./NewPeerResponsesLink";
 
@@ -356,8 +360,10 @@ export default async function Home() {
     coverage.pausedSeconds +
     coverage.unknownSeconds;
 
-  const recentSessions =
-    sessions.slice(
+  const recentActivitySegments =
+    groupContinuousUsageSessions(
+      clippedSessions
+    ).slice(
       0,
       20
     );
@@ -512,8 +518,8 @@ export default async function Home() {
         </h2>
 
         <p>
-          Generate today's preview report for testing.
-          Today's incomplete report is not delivered
+          Generate today&apos;s preview report for testing.
+          Today&apos;s incomplete report is not delivered
           to accountability peers.
         </p>
 
@@ -632,7 +638,7 @@ export default async function Home() {
 
       <section>
         <h2>
-          Today's Tracking Coverage
+          Today&apos;s Tracking Coverage
         </h2>
 
         <div
@@ -727,7 +733,7 @@ export default async function Home() {
 
       <section>
         <h2>
-          Today's Usage
+          Today&apos;s Usage
         </h2>
 
         <p>
@@ -822,7 +828,7 @@ export default async function Home() {
         </h2>
 
         {
-          recentSessions.length ===
+          recentActivitySegments.length ===
             0
             ? (
               <p>
@@ -830,11 +836,11 @@ export default async function Home() {
               </p>
             )
             : (
-              recentSessions.map(
-                (session) => (
+              recentActivitySegments.map(
+                (segment) => (
                   <article
                     key={
-                      session.id
+                      segment.id
                     }
                     style={{
                       border:
@@ -851,19 +857,19 @@ export default async function Home() {
                     }}
                   >
                     <strong>
-                      {session.site}
+                      {segment.site}
                     </strong>
 
                     <p>
                       Type:{" "}
-                      {session.type}
+                      {segment.type}
                     </p>
 
                     <p>
                       Duration:{" "}
                       {
                         formatDuration(
-                          session.durationSeconds
+                          segment.durationSeconds
                         )
                       }
                     </p>
@@ -872,11 +878,45 @@ export default async function Home() {
                       Started:{" "}
                       {
                         formatDateTime(
-                          session.startTime,
+                          segment.startTime,
                           profile.timezone
                         )
                       }
                     </p>
+
+
+                    <p>
+                      Ended:{" "}
+                      {
+                        formatDateTime(
+                          segment.endTime,
+                          profile.timezone
+                        )
+                      }
+                    </p>
+
+
+                    {
+                      segment.sessionCount >
+                        1 && (
+                        <p
+                          style={{
+                            fontSize:
+                              "14px",
+
+                            color:
+                              "#666",
+
+                            marginBottom:
+                              0
+                          }}
+                        >
+                          Combined from{" "}
+                          {segment.sessionCount}{" "}
+                          continuous sessions
+                        </p>
+                      )
+                    }
                   </article>
                 )
               )

@@ -143,7 +143,7 @@ export default function PeerInviteForm() {
           marginBottom: "8px"
         }}
       >
-        Peer's email
+        Peer&apos;s email
       </label>
 
 

@@ -8,6 +8,42 @@ import PeerInviteForm from "./PeerInviteForm";
 import PeerResponseButtons from "./PeerResponseButtons";
 
 
+function formatReportDate(
+  date: Date
+) {
+  return date.toLocaleDateString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC"
+    }
+  );
+}
+
+
+function formatDateTime(
+  date: Date,
+  timeZone: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone,
+
+      dateStyle:
+        "medium",
+
+      timeStyle:
+        "short"
+    }
+  ).format(
+    date
+  );
+}
+
+
 export default async function PeersPage() {
 
   const supabase =
@@ -33,7 +69,8 @@ export default async function PeersPage() {
 
 
   // Keep Supabase Auth and Prisma synchronized.
-  await prisma.user.upsert({
+  const profile =
+    await prisma.user.upsert({
 
     where: {
       id:
@@ -76,6 +113,97 @@ export default async function PeersPage() {
       }
 
     });
+
+
+  const sentPeerIds =
+    sentInvitations.map(
+      (relationship) =>
+        relationship.peerId
+    );
+
+
+  const reportDeliveries =
+    sentPeerIds.length > 0
+      ? await prisma.reportDelivery.findMany({
+
+          where: {
+            peerId: {
+              in:
+                sentPeerIds
+            },
+
+            report: {
+              userId:
+                user.id
+            }
+          },
+
+          include: {
+            report: {
+              select: {
+                id:
+                  true,
+
+                reportDate:
+                  true,
+
+                timezone:
+                  true,
+
+                responses: {
+                  where: {
+                    peerId: {
+                      in:
+                        sentPeerIds
+                    }
+                  },
+
+                  select: {
+                    peerId:
+                      true,
+
+                    createdAt:
+                      true,
+
+                    updatedAt:
+                      true
+                  }
+                }
+              }
+            }
+          },
+
+          orderBy: {
+            createdAt:
+              "desc"
+          }
+
+        })
+      : [];
+
+
+  const latestDeliveryByPeerId =
+    new Map<
+      string,
+      (typeof reportDeliveries)[number]
+    >();
+
+
+  for (
+    const delivery
+    of reportDeliveries
+  ) {
+    if (
+      !latestDeliveryByPeerId.has(
+        delivery.peerId
+      )
+    ) {
+      latestDeliveryByPeerId.set(
+        delivery.peerId,
+        delivery
+      );
+    }
+  }
 
 
   // People who asked me to hold them accountable.
@@ -176,7 +304,7 @@ export default async function PeersPage() {
           sentInvitations.length === 0
             ? (
               <p>
-                You haven't invited
+                You haven&apos;t invited
                 anyone yet.
               </p>
             )
@@ -185,7 +313,23 @@ export default async function PeersPage() {
 
                 {
                   sentInvitations.map(
-                    (relationship) => (
+                    (relationship) => {
+                      const latestDelivery =
+                        latestDeliveryByPeerId.get(
+                          relationship.peerId
+                        );
+
+                      const latestResponse =
+                        latestDelivery
+                          ?.report
+                          .responses
+                          .find(
+                            (response) =>
+                              response.peerId ===
+                              relationship.peerId
+                          );
+
+                      return (
 
                       <div
                         key={
@@ -244,10 +388,111 @@ export default async function PeersPage() {
                           relationship.status ===
                             "accepted" && (
 
-                            <p>
-                              This person is holding
-                              you accountable.
-                            </p>
+                            <>
+                              <p>
+                                This person is holding
+                                you accountable.
+                              </p>
+
+
+                              <div
+                                style={{
+                                  borderTop:
+                                    "1px solid #eee",
+
+                                  marginTop:
+                                    "14px",
+
+                                  paddingTop:
+                                    "14px"
+                                }}
+                              >
+                                <p
+                                  style={{
+                                    marginTop:
+                                      0
+                                  }}
+                                >
+                                  <strong>
+                                    Latest report:
+                                  </strong>{" "}
+
+                                  {
+                                    latestDelivery
+                                      ? formatReportDate(
+                                          latestDelivery
+                                            .report
+                                            .reportDate
+                                        )
+                                      : "No completed report delivered yet"
+                                  }
+                                </p>
+
+
+                                {
+                                  latestDelivery && (
+                                    <>
+                                      <p>
+                                        <strong>
+                                          Delivered:
+                                        </strong>{" "}
+
+                                        {
+                                          formatDateTime(
+                                            latestDelivery.createdAt,
+                                            profile.timezone
+                                          )
+                                        }
+                                      </p>
+
+
+                                      <p>
+                                        <strong>
+                                          Viewed:
+                                        </strong>{" "}
+
+                                        {
+                                          latestDelivery.viewedAt
+                                            ? formatDateTime(
+                                                latestDelivery.viewedAt,
+                                                profile.timezone
+                                              )
+                                            : "Not viewed yet"
+                                        }
+                                      </p>
+
+
+                                      <p>
+                                        <strong>
+                                          Response:
+                                        </strong>{" "}
+
+                                        {
+                                          latestResponse
+                                            ? `Received ${formatDateTime(
+                                                latestResponse.updatedAt,
+                                                profile.timezone
+                                              )}`
+                                            : "No response yet"
+                                        }
+                                      </p>
+
+
+                                      <p
+                                        style={{
+                                          marginBottom:
+                                            0
+                                        }}
+                                      >
+                                        <Link href="/reports">
+                                          View report history
+                                        </Link>
+                                      </p>
+                                    </>
+                                  )
+                                }
+                              </div>
+                            </>
 
                           )
                         }
@@ -267,7 +512,8 @@ export default async function PeersPage() {
 
                       </div>
 
-                    )
+                      );
+                    }
                   )
                 }
 
@@ -291,7 +537,7 @@ export default async function PeersPage() {
       <section>
 
         <h2>
-          People You're Holding Accountable
+          People You&apos;re Holding Accountable
         </h2>
 
 

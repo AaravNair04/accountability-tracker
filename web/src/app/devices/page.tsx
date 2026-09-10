@@ -156,7 +156,8 @@ export default async function DevicesPage() {
     });
 
   const now =
-    Date.now();
+    new Date()
+      .getTime();
 
   return (
     <main

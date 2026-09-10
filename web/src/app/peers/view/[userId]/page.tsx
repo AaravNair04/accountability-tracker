@@ -22,6 +22,10 @@ import {
   getCurrentTrackingStatus
 } from "@/lib/reports/trackingCoverage";
 
+import {
+  groupContinuousUsageSessions
+} from "@/lib/usage/activitySegments";
+
 
 type PageProps = {
   params: Promise<{
@@ -383,8 +387,10 @@ export default async function PeerViewPage({
     coverage.pausedSeconds +
     coverage.unknownSeconds;
 
-  const recentSessions =
-    sessions.slice(
+  const recentActivitySegments =
+    groupContinuousUsageSessions(
+      clippedSessions
+    ).slice(
       0,
       20
     );
@@ -519,7 +525,7 @@ export default async function PeerViewPage({
 
       <section>
         <h2>
-          Today's Tracking Coverage
+          Today&apos;s Tracking Coverage
         </h2>
 
         <div
@@ -612,7 +618,7 @@ export default async function PeerViewPage({
 
       <section>
         <h2>
-          Today's Usage
+          Today&apos;s Usage
         </h2>
 
         <p>
@@ -705,7 +711,7 @@ export default async function PeerViewPage({
         </h2>
 
         {
-          recentSessions.length ===
+          recentActivitySegments.length ===
             0
             ? (
               <p>
@@ -713,11 +719,11 @@ export default async function PeerViewPage({
               </p>
             )
             : (
-              recentSessions.map(
-                (session) => (
+              recentActivitySegments.map(
+                (segment) => (
                   <article
                     key={
-                      session.id
+                      segment.id
                     }
                     style={{
                       border:
@@ -734,19 +740,19 @@ export default async function PeerViewPage({
                     }}
                   >
                     <strong>
-                      {session.site}
+                      {segment.site}
                     </strong>
 
                     <p>
                       Type:{" "}
-                      {session.type}
+                      {segment.type}
                     </p>
 
                     <p>
                       Duration:{" "}
                       {
                         formatDuration(
-                          session.durationSeconds
+                          segment.durationSeconds
                         )
                       }
                     </p>
@@ -755,11 +761,45 @@ export default async function PeerViewPage({
                       Started:{" "}
                       {
                         formatDateTime(
-                          session.startTime,
+                          segment.startTime,
                           owner.timezone
                         )
                       }
                     </p>
+
+
+                    <p>
+                      Ended:{" "}
+                      {
+                        formatDateTime(
+                          segment.endTime,
+                          owner.timezone
+                        )
+                      }
+                    </p>
+
+
+                    {
+                      segment.sessionCount >
+                        1 && (
+                        <p
+                          style={{
+                            fontSize:
+                              "14px",
+
+                            color:
+                              "#666",
+
+                            marginBottom:
+                              0
+                          }}
+                        >
+                          Combined from{" "}
+                          {segment.sessionCount}{" "}
+                          continuous sessions
+                        </p>
+                      )
+                    }
                   </article>
                 )
               )

@@ -48,16 +48,26 @@ export default function TimezoneSettings({
   // Detect the browser's IANA timezone.
   useEffect(
     () => {
+      const timeoutId =
+        window.setTimeout(
+          () => {
+            const timezone =
+              Intl.DateTimeFormat()
+                .resolvedOptions()
+                .timeZone;
 
-      const timezone =
-        Intl.DateTimeFormat()
-          .resolvedOptions()
-          .timeZone;
+            setDetectedTimezone(
+              timezone
+            );
+          },
+          0
+        );
 
-
-      setDetectedTimezone(
-        timezone
-      );
+      return () => {
+        window.clearTimeout(
+          timeoutId
+        );
+      };
 
     },
     []
