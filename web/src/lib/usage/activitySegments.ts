@@ -20,7 +20,7 @@ export type UsageActivitySegment = {
 
 
 const CONTINUOUS_SESSION_GAP_MS =
-  1000;
+  5 * 60 * 1000;
 
 
 export function groupContinuousUsageSessions(
