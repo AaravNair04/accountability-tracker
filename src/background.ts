@@ -1,5 +1,6 @@
 import {
-  getTrackedSite
+  getTrackedSite,
+  loadTrackedSites
 } from "./utils.js";
 
 import {
@@ -14,7 +15,8 @@ import {
   checkIncognitoStateChange,
   isTrackingPaused,
   pauseTracking,
-  resumeTracking
+  resumeTracking,
+  refreshTrackedSites
 } from "./tracker.js";
 
 
@@ -296,6 +298,8 @@ chrome.alarms.onAlarm.addListener(
       HEARTBEAT_ALARM_NAME
     ) {
       await sendHeartbeat();
+
+      await refreshTrackedSites();
     }
   }
 );
@@ -424,6 +428,10 @@ chrome.runtime.onMessage.addListener(
               return;
             }
 
+            await refreshTrackedSites(
+              candidateToken
+            );
+
             sendResponse({
               success:
                 true,
@@ -474,6 +482,8 @@ chrome.runtime.onMessage.addListener(
 
             await sendHeartbeat();
 
+            await refreshTrackedSites();
+
             sendResponse({
               success:
                 true
@@ -504,6 +514,8 @@ chrome.runtime.onMessage.addListener(
 // --------------------------------------------------
 
 async function initializeTracker() {
+  await loadTrackedSites();
+
   await restoreTrackerState();
 
   /*
@@ -511,6 +523,8 @@ async function initializeTracker() {
     linkedDeviceId for older installations.
   */
   await sendHeartbeat();
+
+  await refreshTrackedSites();
 
   await reconcileTrackerState();
 

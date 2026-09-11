@@ -1,3 +1,8 @@
+import {
+  setTrackedSites
+} from "./utils.js";
+
+
 type SessionState = {
   id: string;
   site: string;
@@ -18,6 +23,14 @@ type UsageSession = {
 type HeartbeatApiResponse = {
   success?: boolean;
   deviceId?: string;
+};
+
+type TrackedSitesApiResponse = {
+  success?: boolean;
+  trackedSites?: {
+    hostname?: unknown;
+    site?: unknown;
+  }[];
 };
 
 export type HeartbeatResult = {
@@ -51,6 +64,9 @@ const API_URL =
 
 const HEARTBEAT_URL =
   "https://accountability-tracker-eosin.vercel.app/api/devices/heartbeat"
+
+const TRACKED_SITES_URL =
+  "https://accountability-tracker-eosin.vercel.app/api/tracked-sites";
 
 let activeSession:
   SessionState | null =
@@ -988,6 +1004,119 @@ export async function sendHeartbeat(
       success:
         false
     };
+  }
+}
+
+
+// --------------------------------------------------
+// TRACKED SITES
+// --------------------------------------------------
+
+export async function refreshTrackedSites(
+  tokenOverride?: string
+) {
+  const candidateMode =
+    typeof tokenOverride ===
+    "string";
+
+  const stored =
+    await chrome.storage.local.get(
+      DEVICE_TOKEN_KEY
+    );
+
+  const storedToken =
+    stored[
+      DEVICE_TOKEN_KEY
+    ] as string | undefined;
+
+  const deviceToken =
+    tokenOverride ??
+    storedToken;
+
+  if (
+    !deviceToken
+  ) {
+    return false;
+  }
+
+  try {
+    const response =
+      await fetch(
+        TRACKED_SITES_URL,
+        {
+          headers: {
+            "Authorization":
+              `Bearer ${deviceToken}`
+          }
+        }
+      );
+
+    if (
+      response.status ===
+      401
+    ) {
+      if (
+        !candidateMode
+      ) {
+        await chrome.storage.local.set({
+          backendStatus:
+            "revoked"
+        });
+      }
+
+      return false;
+    }
+
+    if (
+      !response.ok
+    ) {
+      console.error(
+        "[Tracker] Tracked sites refresh failed:",
+        response.status
+      );
+
+      return false;
+    }
+
+    const data =
+      await response.json() as
+        TrackedSitesApiResponse;
+
+    const trackedSiteConfigs =
+      (
+        data.trackedSites ??
+        []
+      ).flatMap(
+        (trackedSite) =>
+          typeof trackedSite.hostname ===
+            "string" &&
+          typeof trackedSite.site ===
+            "string"
+            ? [
+                {
+                  hostname:
+                    trackedSite.hostname,
+
+                  site:
+                    trackedSite.site
+                }
+              ]
+            : []
+      );
+
+    await setTrackedSites(
+      trackedSiteConfigs
+    );
+
+    return true;
+
+  } catch (error) {
+    console.error(
+      "[Tracker] Tracked sites refresh failed:",
+      error
+    );
+
+    return false;
   }
 }
 

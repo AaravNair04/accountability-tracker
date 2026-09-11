@@ -19,8 +19,24 @@ model User {
   peerRelationships TrustedPeer[]    @relation("PeerOwner")
   accountabilityFor TrustedPeer[]    @relation("AccountabilityPeer")
   sessions          UsageSession[]
+  trackedSites      TrackedSite[]
 
   @@map("users")
+}
+
+model TrackedSite {
+  id        String   @id @default(cuid())
+  site      String
+  hostname  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  enabled   Boolean  @default(true)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hostname])
+  @@index([userId])
+  @@map("tracked_sites")
 }
 
 model Device {
