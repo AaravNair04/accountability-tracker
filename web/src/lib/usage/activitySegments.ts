@@ -37,11 +37,14 @@ export function countShortActiveUsageSessions(
   minimumDurationSeconds =
     MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS
 ) {
-  return sessions.filter(
-    (session) =>
-      session.type ===
+  return buildContinuousUsageSegments(
+    sessions,
+    minimumDurationSeconds
+  ).filter(
+    (segment) =>
+      segment.type ===
         "active" &&
-      session.durationSeconds <
+      segment.durationSeconds <
         minimumDurationSeconds
   ).length;
 }
@@ -113,15 +116,10 @@ function mergeSegment(
 }
 
 
-export function groupContinuousUsageSessions(
+function buildContinuousUsageSegments(
   sessions: UsageActivitySession[],
-  options:
-    GroupContinuousUsageSessionsOptions = {}
+  bridgeShorterThanSeconds = 0
 ) {
-  const minimumSegmentDurationSeconds =
-    options.minimumSegmentDurationSeconds ??
-    0;
-
   const sortedSessions =
     [...sessions].sort(
       (
@@ -175,17 +173,17 @@ export function groupContinuousUsageSessions(
     }
 
     const isShortInterruption =
-      minimumSegmentDurationSeconds >
+      bridgeShorterThanSeconds >
         0 &&
       previousSegment &&
       session.durationSeconds <
-        minimumSegmentDurationSeconds &&
+        bridgeShorterThanSeconds &&
       canBridgeAcrossShortSession(
         sortedSessions,
         index +
           1,
         previousSegment,
-        minimumSegmentDurationSeconds
+        bridgeShorterThanSeconds
       );
 
     if (
@@ -217,6 +215,25 @@ export function groupContinuousUsageSessions(
         1
     });
   }
+
+  return segments;
+}
+
+
+export function groupContinuousUsageSessions(
+  sessions: UsageActivitySession[],
+  options:
+    GroupContinuousUsageSessionsOptions = {}
+) {
+  const minimumSegmentDurationSeconds =
+    options.minimumSegmentDurationSeconds ??
+    0;
+
+  const segments =
+    buildContinuousUsageSegments(
+      sessions,
+      minimumSegmentDurationSeconds
+    );
 
   return segments
     .filter(

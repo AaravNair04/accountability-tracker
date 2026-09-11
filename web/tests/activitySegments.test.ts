@@ -43,7 +43,7 @@ function session(
 
 
 test(
-  "counts only active sessions under the visible duration threshold",
+  "counts only grouped active segments under the visible duration threshold",
   () => {
     const count =
       countShortActiveUsageSessions([
@@ -79,7 +79,43 @@ test(
 
     assert.equal(
       count,
-      2
+      1
+    );
+  }
+);
+
+
+test(
+  "does not count short active bursts that group into a longer segment",
+  () => {
+    const count =
+      countShortActiveUsageSessions([
+        session(
+          "a",
+          "youtube",
+          "active",
+          "2026-09-11T10:00:00.000Z",
+          "2026-09-11T10:02:00.000Z"
+        ),
+        session(
+          "b",
+          "youtube",
+          "background_audio",
+          "2026-09-11T10:02:10.000Z",
+          "2026-09-11T10:02:30.000Z"
+        ),
+        session(
+          "c",
+          "youtube",
+          "active",
+          "2026-09-11T10:02:40.000Z",
+          "2026-09-11T10:04:40.000Z"
+        )
+      ]);
+
+    assert.equal(
+      count,
+      0
     );
   }
 );
