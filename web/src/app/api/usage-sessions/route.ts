@@ -15,6 +15,10 @@ import {
   createClient
 } from "@/lib/supabase/server";
 
+import {
+  getEnabledTrackedSites
+} from "@/lib/trackedSites";
+
 
 type UsageSessionBody = {
   id?: unknown;
@@ -25,14 +29,6 @@ type UsageSessionBody = {
   durationSeconds?: unknown;
   deviceId?: unknown;
 };
-
-
-const ALLOWED_SITES =
-  new Set([
-    "youtube",
-    "instagram",
-    "netflix"
-  ]);
 
 
 const ALLOWED_TYPES =
@@ -218,9 +214,8 @@ export async function POST(
     if (
       !id ||
       id.length > 128 ||
-      !ALLOWED_SITES.has(
-        site
-      ) ||
+      !site ||
+      site.length > 128 ||
       !ALLOWED_TYPES.has(
         type
       ) ||
@@ -239,6 +234,36 @@ export async function POST(
         {
           error:
             "Invalid usage session."
+        },
+        {
+          status:
+            400
+        }
+      );
+    }
+
+    const trackedSites =
+      await getEnabledTrackedSites(
+        identity.userId
+      );
+
+    const allowedSites =
+      new Set(
+        trackedSites.map(
+          (trackedSite) =>
+            trackedSite.site
+        )
+      );
+
+    if (
+      !allowedSites.has(
+        site
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "This site is not enabled for tracking."
         },
         {
           status:

@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { getEnabledTrackedSites } from "@/lib/trackedSites";
 
+import TrackedSitesSettings from "./TrackedSitesSettings";
 import TimezoneSettings from "./TimezoneSettings";
 
 
@@ -67,6 +69,11 @@ export default async function SettingsPage() {
 
   }
 
+  const trackedSites =
+    await getEnabledTrackedSites(
+      user.id
+    );
+
 
   return (
     <main
@@ -91,6 +98,24 @@ export default async function SettingsPage() {
       <TimezoneSettings
         currentTimezone={
           profile.timezone
+        }
+      />
+
+
+      <TrackedSitesSettings
+        trackedSites={
+          trackedSites.map(
+            (trackedSite) => ({
+              id:
+                trackedSite.id,
+
+              hostname:
+                trackedSite.hostname,
+
+              site:
+                trackedSite.site
+            })
+          )
         }
       />
 
