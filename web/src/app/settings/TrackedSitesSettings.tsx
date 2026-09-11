@@ -232,36 +232,20 @@ export default function TrackedSitesSettings({
 
 
   return (
-    <section
-      style={{
-        marginTop:
-          "32px"
-      }}
-    >
+    <section className="app-card">
 
-      <h2>
+      <h2 className="app-section-title">
         Tracked websites
       </h2>
 
 
-      <p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         These websites are tracked by the browser extension.
         Changes sync the next time the extension contacts the app.
       </p>
 
 
-      <div
-        style={{
-          display:
-            "flex",
-          gap:
-            "8px",
-          alignItems:
-            "center",
-          margin:
-            "16px 0"
-        }}
-      >
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="text"
           value={hostname}
@@ -273,28 +257,14 @@ export default function TrackedSitesSettings({
                 event.target.value
               )
           }
-          style={{
-            flex:
-              1,
-            minWidth:
-              0,
-            padding:
-              "10px 12px"
-          }}
+          className="min-w-0 flex-1 rounded-lg border px-4 py-3"
         />
 
         <button
           type="button"
           disabled={loading}
           onClick={addTrackedSite}
-          style={{
-            padding:
-              "10px 16px",
-            cursor:
-              loading
-                ? "not-allowed"
-                : "pointer"
-          }}
+          className="app-button-primary"
         >
           Add
         </button>
@@ -305,56 +275,21 @@ export default function TrackedSitesSettings({
         sites.length > 0
           ? (
             <ul
-              style={{
-                listStyle:
-                  "none",
-                padding:
-                  0,
-                margin:
-                  0,
-                display:
-                  "grid",
-                gap:
-                  "10px"
-              }}
+              className="mt-5 grid gap-3"
             >
               {
                 sites.map(
                   (site) => (
                     <li
                       key={site.id}
-                      style={{
-                        border:
-                          "1px solid #ddd",
-                        borderRadius:
-                          "8px",
-                        padding:
-                          "12px",
-                        display:
-                          "flex",
-                        alignItems:
-                          "center",
-                        justifyContent:
-                          "space-between",
-                        gap:
-                          "12px"
-                      }}
+                      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div>
-                        <strong>
+                        <strong className="text-slate-950 dark:text-white">
                           {site.hostname}
                         </strong>
 
-                        <div
-                          style={{
-                            color:
-                              "#666",
-                            fontSize:
-                              "14px",
-                            marginTop:
-                              "4px"
-                          }}
-                        >
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                           Saved as {site.site}
                         </div>
                       </div>
@@ -368,6 +303,7 @@ export default function TrackedSitesSettings({
                               site.id
                             )
                         }
+                        className="app-button-secondary"
                       >
                         Remove
                       </button>
@@ -378,7 +314,7 @@ export default function TrackedSitesSettings({
             </ul>
           )
           : (
-            <p>
+            <p className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
               No websites are currently tracked.
             </p>
           )
@@ -387,12 +323,7 @@ export default function TrackedSitesSettings({
 
       {
         message && (
-          <p
-            style={{
-              marginTop:
-                "10px"
-            }}
-          >
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
             {message}
           </p>
         )

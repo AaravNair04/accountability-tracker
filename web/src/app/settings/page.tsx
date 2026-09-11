@@ -3,13 +3,11 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { getEnabledTrackedSites } from "@/lib/trackedSites";
 
 import AuditHistorySettings from "./AuditHistorySettings";
 import DataExportSettings from "./DataExportSettings";
 import DataRetentionSettings from "./DataRetentionSettings";
 import DeleteTrackingHistorySettings from "./DeleteTrackingHistorySettings";
-import TrackedSitesSettings from "./TrackedSitesSettings";
 import TimezoneSettings from "./TimezoneSettings";
 
 
@@ -69,11 +67,6 @@ export default async function SettingsPage() {
 
   }
 
-  const trackedSites =
-    await getEnabledTrackedSites(
-      user.id
-    );
-
   const auditEvents =
     await prisma.auditEvent.findMany({
       where: {
@@ -111,22 +104,23 @@ export default async function SettingsPage() {
       />
 
 
-      <TrackedSitesSettings
-        trackedSites={
-          trackedSites.map(
-            (trackedSite) => ({
-              id:
-                trackedSite.id,
+      <section className="app-card">
+        <h2 className="app-section-title">
+          Tracked Websites
+        </h2>
 
-              hostname:
-                trackedSite.hostname,
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Manage the sites watched by the browser extension on
+          the dedicated tracked websites page.
+        </p>
 
-              site:
-                trackedSite.site
-            })
-          )
-        }
-      />
+        <Link
+          href="/tracked-sites"
+          className="mt-4 inline-flex rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white no-underline shadow-sm hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+        >
+          Manage Tracked Websites
+        </Link>
+      </section>
 
 
       <DataExportSettings />

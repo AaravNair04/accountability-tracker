@@ -41,6 +41,12 @@ const navigationItems = [
   },
   {
     href:
+      "/tracked-sites",
+    label:
+      "Tracked Sites"
+  },
+  {
+    href:
       "/settings",
     label:
       "Settings"
