@@ -6,6 +6,10 @@ import {
   recordAuditEvent
 } from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  rateLimitResponse
+} from "@/lib/rateLimit";
 import { createClient } from "@/lib/supabase/server";
 
 
@@ -41,6 +45,24 @@ export async function DELETE() {
           status:
             401
         }
+      );
+    }
+
+    const rateLimit =
+      checkRateLimit({
+        key:
+          `tracking-history:delete:${userId}`,
+        limit:
+          3,
+        windowMs:
+          60 * 60 * 1000
+      });
+
+    if (
+      !rateLimit.allowed
+    ) {
+      return rateLimitResponse(
+        rateLimit.retryAfterSeconds
       );
     }
 

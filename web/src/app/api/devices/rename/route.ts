@@ -7,6 +7,10 @@ import {
   recordAuditEvent
 } from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  rateLimitResponse
+} from "@/lib/rateLimit";
 import { createClient } from "@/lib/supabase/server";
 
 
@@ -36,6 +40,24 @@ export async function POST(
           status:
             401
         }
+      );
+    }
+
+    const rateLimit =
+      checkRateLimit({
+        key:
+          `device:rename:${user.id}`,
+        limit:
+          30,
+        windowMs:
+          60 * 60 * 1000
+      });
+
+    if (
+      !rateLimit.allowed
+    ) {
+      return rateLimitResponse(
+        rateLimit.retryAfterSeconds
       );
     }
 

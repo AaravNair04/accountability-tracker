@@ -13,6 +13,10 @@ import {
 import {
   prisma
 } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  rateLimitResponse
+} from "@/lib/rateLimit";
 
 
 type HeartbeatBody = {
@@ -110,6 +114,24 @@ export async function POST(
           status:
             401
         }
+      );
+    }
+
+    const rateLimit =
+      checkRateLimit({
+        key:
+          `device:heartbeat:${device.id}`,
+        limit:
+          180,
+        windowMs:
+          5 * 60 * 1000
+      });
+
+    if (
+      !rateLimit.allowed
+    ) {
+      return rateLimitResponse(
+        rateLimit.retryAfterSeconds
       );
     }
 

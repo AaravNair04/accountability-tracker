@@ -12,6 +12,11 @@ import {
 } from "@/lib/prisma";
 
 import {
+  checkRateLimit,
+  rateLimitResponse
+} from "@/lib/rateLimit";
+
+import {
   createClient
 } from "@/lib/supabase/server";
 
@@ -145,6 +150,24 @@ export async function POST(
           status:
             401
         }
+      );
+    }
+
+    const rateLimit =
+      checkRateLimit({
+        key:
+          `usage-session:create:${identity.authenticatedDeviceId}`,
+        limit:
+          300,
+        windowMs:
+          5 * 60 * 1000
+      });
+
+    if (
+      !rateLimit.allowed
+    ) {
+      return rateLimitResponse(
+        rateLimit.retryAfterSeconds
       );
     }
 

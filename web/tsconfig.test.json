@@ -16,6 +16,7 @@
     "src/lib/reports/reportTime.ts",
     "src/lib/trackedSiteRules.ts",
     "src/lib/dataRetentionRules.ts",
+    "src/lib/rateLimit.ts",
     "tests/**/*.test.ts"
   ]
 }

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  rateLimitResponse
+} from "@/lib/rateLimit";
 import { createClient } from "@/lib/supabase/server";
 
 
@@ -37,6 +41,24 @@ export async function POST(
         }
       );
 
+    }
+
+    const rateLimit =
+      checkRateLimit({
+        key:
+          `report-response:create:${user.id}`,
+        limit:
+          40,
+        windowMs:
+          60 * 60 * 1000
+      });
+
+    if (
+      !rateLimit.allowed
+    ) {
+      return rateLimitResponse(
+        rateLimit.retryAfterSeconds
+      );
     }
 
 

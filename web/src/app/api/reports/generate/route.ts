@@ -12,6 +12,11 @@ import {
 } from "@/lib/prisma";
 
 import {
+  checkRateLimit,
+  rateLimitResponse
+} from "@/lib/rateLimit";
+
+import {
   generateDailyReport
 } from "@/lib/reports/generateDailyReport";
 
@@ -109,6 +114,24 @@ export async function POST(
           status:
             401
         }
+      );
+    }
+
+    const rateLimit =
+      checkRateLimit({
+        key:
+          `report:generate:${user.id}`,
+        limit:
+          20,
+        windowMs:
+          60 * 60 * 1000
+      });
+
+    if (
+      !rateLimit.allowed
+    ) {
+      return rateLimitResponse(
+        rateLimit.retryAfterSeconds
       );
     }
 

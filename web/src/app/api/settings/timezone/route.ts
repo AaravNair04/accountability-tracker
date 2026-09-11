@@ -7,6 +7,10 @@ import {
   recordAuditEvent
 } from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  rateLimitResponse
+} from "@/lib/rateLimit";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -46,6 +50,24 @@ export async function POST(
         }
       );
 
+    }
+
+    const rateLimit =
+      checkRateLimit({
+        key:
+          `settings:timezone:${user.id}`,
+        limit:
+          20,
+        windowMs:
+          60 * 60 * 1000
+      });
+
+    if (
+      !rateLimit.allowed
+    ) {
+      return rateLimitResponse(
+        rateLimit.retryAfterSeconds
+      );
     }
 
 
