@@ -3,6 +3,10 @@ import {
 } from "@/lib/prisma";
 
 import {
+  sendReportReadyEmail
+} from "@/lib/email";
+
+import {
   calendarDateToDatabaseDate,
   getDayStartUtc,
   getNextDayStartUtc,
@@ -38,6 +42,9 @@ export async function generateDailyReport(
       },
 
       select: {
+        email:
+          true,
+
         timezone:
           true
       }
@@ -343,7 +350,14 @@ export async function generateDailyReport(
 
         select: {
           peerId:
-            true
+            true,
+
+          peer: {
+            select: {
+              email:
+                true
+            }
+          }
         }
       });
 
@@ -351,26 +365,53 @@ export async function generateDailyReport(
       const relationship
       of acceptedPeers
     ) {
-      await prisma.reportDelivery.upsert({
-        where: {
-          reportId_peerId: {
-            reportId:
-              report.id,
+      const existingDelivery =
+        await prisma.reportDelivery.findUnique({
+          where: {
+            reportId_peerId: {
+              reportId:
+                report.id,
 
-            peerId:
-              relationship.peerId
+              peerId:
+                relationship.peerId
+            }
           }
-        },
+        });
 
-        update: {},
+      if (
+        existingDelivery
+      ) {
+        continue;
+      }
 
-        create: {
+      await prisma.reportDelivery.create({
+        data: {
           reportId:
             report.id,
 
           peerId:
             relationship.peerId
         }
+      });
+
+      await sendReportReadyEmail({
+        to:
+          relationship.peer.email,
+
+        ownerEmail:
+          reportOwner.email,
+
+        ownerId:
+          userId,
+
+        reportId:
+          report.id,
+
+        reportDate:
+          databaseReportDate,
+
+        timezone:
+          timeZone
       });
     }
   }
