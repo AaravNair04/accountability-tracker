@@ -8,6 +8,10 @@ import {
 } from "@/lib/prisma";
 
 import {
+  deleteExpiredRawData
+} from "@/lib/dataRetention";
+
+import {
   generateDailyReport
 } from "@/lib/reports/generateDailyReport";
 
@@ -76,6 +80,9 @@ export async function GET(
             true,
 
           timezone:
+            true,
+
+          rawDataRetentionDays:
             true
         }
       });
@@ -128,6 +135,16 @@ export async function GET(
               true
           }
         );
+
+        if (
+          user.rawDataRetentionDays !==
+          null
+        ) {
+          await deleteExpiredRawData(
+            user.id,
+            user.rawDataRetentionDays
+          );
+        }
 
         generatedReports.push({
           userId:

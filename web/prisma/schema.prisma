@@ -12,6 +12,7 @@ model User {
   email             String           @unique
   createdAt         DateTime         @default(now())
   timezone          String           @default("Asia/Kolkata")
+  rawDataRetentionDays Int?
   dailyReports      DailyReport[]
   devices           Device[]
   reportDeliveries  ReportDelivery[] @relation("ReportDeliveryPeer")

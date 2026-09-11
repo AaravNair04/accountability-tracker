@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getEnabledTrackedSites } from "@/lib/trackedSites";
 
 import DataExportSettings from "./DataExportSettings";
+import DataRetentionSettings from "./DataRetentionSettings";
 import DeleteTrackingHistorySettings from "./DeleteTrackingHistorySettings";
 import TrackedSitesSettings from "./TrackedSitesSettings";
 import TimezoneSettings from "./TimezoneSettings";
@@ -40,6 +41,9 @@ export default async function SettingsPage() {
 
       select: {
         timezone:
+          true,
+
+        rawDataRetentionDays:
           true
       }
 
@@ -123,6 +127,13 @@ export default async function SettingsPage() {
 
 
       <DataExportSettings />
+
+
+      <DataRetentionSettings
+        currentRetentionDays={
+          profile.rawDataRetentionDays
+        }
+      />
 
 
       <DeleteTrackingHistorySettings />
