@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getEnabledTrackedSites } from "@/lib/trackedSites";
 
 import DataExportSettings from "./DataExportSettings";
+import DeleteTrackingHistorySettings from "./DeleteTrackingHistorySettings";
 import TrackedSitesSettings from "./TrackedSitesSettings";
 import TimezoneSettings from "./TimezoneSettings";
 
@@ -122,6 +123,9 @@ export default async function SettingsPage() {
 
 
       <DataExportSettings />
+
+
+      <DeleteTrackingHistorySettings />
 
     </main>
   );
