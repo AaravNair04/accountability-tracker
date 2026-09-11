@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { getEnabledTrackedSites } from "@/lib/trackedSites";
 
+import DataExportSettings from "./DataExportSettings";
 import TrackedSitesSettings from "./TrackedSitesSettings";
 import TimezoneSettings from "./TimezoneSettings";
 
@@ -118,6 +119,9 @@ export default async function SettingsPage() {
           )
         }
       />
+
+
+      <DataExportSettings />
 
     </main>
   );
