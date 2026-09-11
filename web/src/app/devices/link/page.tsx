@@ -342,23 +342,9 @@ export default function DeviceLinkPage() {
 
 
   return (
-    <main
-      style={{
-        maxWidth:
-          "600px",
+    <main className="app-page-narrow max-w-2xl space-y-6">
 
-        margin:
-          "0 auto",
-
-        padding:
-          "40px 20px",
-
-        fontFamily:
-          "Arial, sans-serif"
-      }}
-    >
-
-      <h1>
+      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
         Link Accountability Tracker
       </h1>
 
@@ -378,6 +364,7 @@ export default function DeviceLinkPage() {
           loading ||
           linked
         }
+        className="app-button-primary"
       >
         {
           linked

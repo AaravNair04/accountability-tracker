@@ -387,26 +387,12 @@ export default async function PeerPreviewPage() {
     });
 
   return (
-    <main
-      style={{
-        maxWidth:
-          "900px",
-
-        margin:
-          "0 auto",
-
-        padding:
-          "40px 20px",
-
-        fontFamily:
-          "Arial, sans-serif"
-      }}
-    >
+    <main className="app-page-narrow space-y-6">
       <Link href="/peers">
         ← Back to Peers
       </Link>
 
-      <h1>
+      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
         Peer View Preview
       </h1>
 

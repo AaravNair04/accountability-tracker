@@ -177,23 +177,12 @@ export default async function PeerViewPage({
       null
   ) {
     return (
-      <main
-        style={{
-          maxWidth:
-            "900px",
-
-          margin:
-            "0 auto",
-
-          padding:
-            "40px 20px"
-        }}
-      >
+      <main className="app-page-narrow space-y-6">
         <Link href="/peers">
           ← Back to Peers
         </Link>
 
-        <h1>
+        <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
           Access Denied
         </h1>
 
@@ -411,26 +400,12 @@ export default async function PeerViewPage({
 
 
   return (
-    <main
-      style={{
-        maxWidth:
-          "900px",
-
-        margin:
-          "0 auto",
-
-        padding:
-          "40px 20px",
-
-        fontFamily:
-          "Arial, sans-serif"
-      }}
-    >
+    <main className="app-page-narrow space-y-6">
       <Link href="/peers">
         ← Back to Peers
       </Link>
 
-      <h1>
+      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
         Accountability View
       </h1>
 

@@ -89,17 +89,17 @@ export default function AuthPage() {
 
 
   return (
-    <main className="min-h-screen bg-gray-100 p-8">
+    <main className="app-page flex min-h-[calc(100vh-73px)] items-center justify-center">
 
-      <div className="mx-auto max-w-md">
+      <div className="w-full max-w-md">
 
-        <div className="rounded-xl bg-white p-8 shadow">
+        <div className="app-card p-8">
 
-          <h1 className="mb-2 text-3xl font-bold">
+          <h1 className="mb-2 text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
             Accountability Tracker
           </h1>
 
-          <p className="mb-6 text-gray-600">
+          <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
             Sign up or log in
           </p>
 
@@ -108,7 +108,7 @@ export default function AuthPage() {
 
             <div>
 
-              <label className="mb-1 block text-sm font-medium">
+              <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Email
               </label>
 
@@ -131,7 +131,7 @@ export default function AuthPage() {
 
             <div>
 
-              <label className="mb-1 block text-sm font-medium">
+              <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Password
               </label>
 
@@ -158,7 +158,7 @@ export default function AuthPage() {
                 type="button"
                 onClick={handleLogin}
                 disabled={loading}
-                className="rounded-lg bg-black px-4 py-3 text-white disabled:opacity-50"
+                className="app-button-primary"
               >
                 {loading
                   ? "Please wait..."
@@ -170,7 +170,7 @@ export default function AuthPage() {
                 type="button"
                 onClick={handleSignUp}
                 disabled={loading}
-                className="rounded-lg border px-4 py-3 disabled:opacity-50"
+                className="app-button-secondary"
               >
                 Sign Up
               </button>
@@ -181,7 +181,7 @@ export default function AuthPage() {
 
 
           {message && (
-            <p className="mt-4 text-sm text-gray-700">
+            <p className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">
               {message}
             </p>
           )}

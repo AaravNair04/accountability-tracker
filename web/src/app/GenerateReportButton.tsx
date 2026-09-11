@@ -111,12 +111,7 @@ export default function GenerateReportButton() {
 
 
   return (
-    <div
-      style={{
-        marginTop:
-          "20px"
-      }}
-    >
+    <div className="mt-5">
       <button
         type="button"
         disabled={
@@ -125,15 +120,7 @@ export default function GenerateReportButton() {
         onClick={
           generateReport
         }
-        style={{
-          padding:
-            "10px 16px",
-
-          cursor:
-            loading
-              ? "not-allowed"
-              : "pointer"
-        }}
+        className="app-button-primary"
       >
         {
           loading
@@ -144,12 +131,7 @@ export default function GenerateReportButton() {
 
       {
         message && (
-          <p
-            style={{
-              marginTop:
-                "10px"
-            }}
-          >
+          <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
             {message}
           </p>
         )

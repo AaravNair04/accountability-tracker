@@ -446,41 +446,33 @@ export default async function Home() {
 
 
   return (
-    <main
-      style={{
-        maxWidth:
-          "1000px",
+    <main className="app-page space-y-8">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            Dashboard
+          </p>
 
-        margin:
-          "0 auto",
+          <h1 className="mt-2 text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
+            Accountability Tracker
+          </h1>
 
-        padding:
-          "40px 20px",
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Logged in as{" "}
+            <strong className="font-semibold text-slate-700 dark:text-slate-200">
+              {user.email}
+            </strong>
+            {" "}in{" "}
+            <strong className="font-semibold text-slate-700 dark:text-slate-200">
+              {profile.timezone}
+            </strong>
+          </p>
+        </div>
 
-        fontFamily:
-          "Arial, sans-serif"
-      }}
-    >
-      <h1>
-        Accountability Tracker
-      </h1>
-
-      <p>
-        Logged in as{" "}
-        <strong>
-          {user.email}
-        </strong>
-      </p>
-
-      <p>
-        Timezone:{" "}
-        <strong>
-          {profile.timezone}
-        </strong>
-      </p>
-
-      <p>
-        <Link href="/notifications">
+        <Link
+          href="/notifications"
+          className="inline-flex items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 no-underline hover:bg-indigo-100 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+        >
           Notifications
           {
             notificationCount > 0
@@ -488,55 +480,28 @@ export default async function Home() {
               : ""
           }
         </Link>
-      </p>
+      </section>
 
 
       {/* ACCOUNTABILITY */}
 
-      <section
-        style={{
-          marginTop:
-            "30px"
-        }}
-      >
-        <h2>
+      <section className="space-y-4">
+        <h2 className="app-section-title">
           Accountability
         </h2>
 
-        <div
-          style={{
-            display:
-              "grid",
-
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(260px, 1fr))",
-
-            gap:
-              "20px"
-          }}
-        >
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              borderRadius:
-                "10px",
-
-              padding:
-                "20px"
-            }}
-          >
-            <h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="app-card">
+            <h3 className="font-semibold text-slate-950 dark:text-white">
               My Accountability
             </h3>
 
-            <p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               Review your reports and feedback
               from your accountability peers.
             </p>
 
-            <p>
+            <p className="mt-4">
               <Link href="/reports">
                 My Daily Reports
               </Link>
@@ -555,28 +520,17 @@ export default async function Home() {
             />
           </div>
 
-          <div
-            style={{
-              border:
-                "1px solid #ccc",
-
-              borderRadius:
-                "10px",
-
-              padding:
-                "20px"
-            }}
-          >
-            <h3>
+          <div className="app-card">
+            <h3 className="font-semibold text-slate-950 dark:text-white">
               Accountability for Others
             </h3>
 
-            <p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               Review reports from people who
               trust you to hold them accountable.
             </p>
 
-            <p>
+            <p className="mt-4">
               <Link href="/inbox">
                 Report Inbox
                 {
@@ -600,17 +554,12 @@ export default async function Home() {
 
       {/* REPORT PREVIEW */}
 
-      <section
-        style={{
-          marginTop:
-            "30px"
-        }}
-      >
-        <h2>
+      <section className="app-card border-indigo-100 bg-indigo-50/60 dark:border-indigo-500/20 dark:bg-indigo-500/10">
+        <h2 className="app-section-title">
           Daily Report
         </h2>
 
-        <p>
+        <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
           Generate today&apos;s preview report for testing.
           Today&apos;s incomplete report is not delivered
           to accountability peers.
@@ -622,58 +571,32 @@ export default async function Home() {
 
       {/* SETTINGS */}
 
-      <section
-        style={{
-          marginTop:
-            "30px"
-        }}
-      >
-        <h2>
+      <section className="app-card">
+        <h2 className="app-section-title">
           Settings
         </h2>
 
-        <p>
+        <div className="mt-3 flex flex-wrap gap-4 text-sm">
           <Link href="/devices">
             Devices
           </Link>
-        </p>
 
-        <p>
           <Link href="/settings">
             Timezone & Settings
           </Link>
-        </p>
+        </div>
       </section>
-
-
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
 
 
       {/* CURRENT STATUS */}
 
-      <section>
-        <h2>
+      <section className="space-y-4">
+        <h2 className="app-section-title">
           Current Tracking Status
         </h2>
 
-        <div
-          style={{
-            border:
-              "1px solid #ccc",
-
-            borderRadius:
-              "8px",
-
-            padding:
-              "20px"
-          }}
-        >
-          <p>
+        <div className="app-card">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             <strong>
               Status:
             </strong>{" "}
@@ -684,7 +607,7 @@ export default async function Home() {
             current.device
               ? (
                 <>
-                  <p>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                     <strong>
                       Device:
                     </strong>{" "}
@@ -693,7 +616,7 @@ export default async function Home() {
                     }
                   </p>
 
-                  <p>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                     <strong>
                       Last heartbeat:
                     </strong>{" "}
@@ -709,7 +632,7 @@ export default async function Home() {
                 </>
               )
               : (
-                <p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   No confirmed, non-revoked
                   tracking device found.
                 </p>
@@ -719,33 +642,14 @@ export default async function Home() {
       </section>
 
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-
       {/* COVERAGE */}
 
-      <section>
-        <h2>
+      <section className="space-y-4">
+        <h2 className="app-section-title">
           Today&apos;s Tracking Coverage
         </h2>
 
-        <div
-          style={{
-            display:
-              "grid",
-
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(160px, 1fr))",
-
-            gap:
-              "15px"
-          }}
-        >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {
             [
               [
@@ -775,22 +679,13 @@ export default async function Home() {
                   key={
                     label as string
                   }
-                  style={{
-                    border:
-                      "1px solid #ccc",
-
-                    borderRadius:
-                      "8px",
-
-                    padding:
-                      "20px"
-                  }}
+                  className="app-card"
                 >
-                  <h3>
+                  <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                     {label}
                   </h3>
 
-                  <p>
+                  <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
                     {
                       formatDuration(
                         seconds as number
@@ -798,7 +693,7 @@ export default async function Home() {
                     }
                   </p>
 
-                  <p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     {
                       formatPercentage(
                         seconds as number,
@@ -814,22 +709,15 @@ export default async function Home() {
       </section>
 
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-
       {/* USAGE */}
 
-      <section>
-        <h2>
+      <section className="app-card">
+        <h2 className="app-section-title">
           Today&apos;s Usage
         </h2>
 
-        <p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <p className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
           <strong>
             Total:
           </strong>{" "}
@@ -838,9 +726,9 @@ export default async function Home() {
               totalSeconds
             )
           }
-        </p>
+          </p>
 
-        <p>
+          <p className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
           <strong>
             Active:
           </strong>{" "}
@@ -849,9 +737,9 @@ export default async function Home() {
               activeSeconds
             )
           }
-        </p>
+          </p>
 
-        <p>
+          <p className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
           <strong>
             Background audio:
           </strong>{" "}
@@ -860,9 +748,10 @@ export default async function Home() {
               backgroundSeconds
             )
           }
-        </p>
+          </p>
+        </div>
 
-        <h3>
+        <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Site Breakdown
         </h3>
 
@@ -870,12 +759,12 @@ export default async function Home() {
           siteUsage.length ===
             0
             ? (
-              <p>
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                 No tracked usage today.
               </p>
             )
             : (
-              <ul>
+              <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
                 {
                   siteUsage.map(
                     (
@@ -888,13 +777,19 @@ export default async function Home() {
                         key={
                           site
                         }
+                        className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
                       >
-                        {site}:{" "}
-                        {
-                          formatDuration(
-                            seconds
-                          )
-                        }
+                        <span className="font-medium text-slate-700 dark:text-slate-200">
+                          {site}
+                        </span>
+
+                        <span className="text-slate-500 dark:text-slate-400">
+                          {
+                            formatDuration(
+                              seconds
+                            )
+                          }
+                        </span>
                       </li>
                     )
                   )
@@ -905,33 +800,33 @@ export default async function Home() {
       </section>
 
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-
       {/* RECENT ACTIVITY */}
 
-      <section>
-        <h2>
+      <section className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="app-section-title">
           Recent Activity
-        </h2>
+            </h2>
 
-        <p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Visible blocks show sessions of 3 minutes or more.
+            </p>
+          </div>
+
+          <p className="inline-flex rounded-lg border border-red-100 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
           Short active distractions today:{" "}
           <strong>
             {shortActiveDistractionCount}
           </strong>
-        </p>
+          </p>
+        </div>
 
         {
           recentActivitySegments.length ===
             0
             ? (
-              <p>
+              <p className="app-card-muted text-sm text-slate-500 dark:text-slate-400">
                 No activity blocks over 3 minutes today.
               </p>
             )
@@ -942,30 +837,18 @@ export default async function Home() {
                     key={
                       segment.id
                     }
-                    style={{
-                      border:
-                        "1px solid #ccc",
-
-                      borderRadius:
-                        "8px",
-
-                      padding:
-                        "15px",
-
-                      marginBottom:
-                        "10px"
-                    }}
+                    className="app-card"
                   >
-                    <strong>
+                    <strong className="text-slate-950 dark:text-white">
                       {segment.site}
                     </strong>
 
-                    <p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                       Type:{" "}
                       {segment.type}
                     </p>
 
-                    <p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Duration:{" "}
                       {
                         formatDuration(
@@ -974,7 +857,7 @@ export default async function Home() {
                       }
                     </p>
 
-                    <p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Started:{" "}
                       {
                         formatDateTime(
@@ -985,7 +868,7 @@ export default async function Home() {
                     </p>
 
 
-                    <p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Ended:{" "}
                       {
                         formatDateTime(
@@ -999,18 +882,7 @@ export default async function Home() {
                     {
                       segment.sessionCount >
                         1 && (
-                        <p
-                          style={{
-                            fontSize:
-                              "14px",
-
-                            color:
-                              "#666",
-
-                            marginBottom:
-                              0
-                          }}
-                        >
+                        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                           Combined from{" "}
                           {segment.sessionCount}{" "}
                           continuous sessions

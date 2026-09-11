@@ -104,37 +104,12 @@ export default function RemovePeerButton({
 
 
   return (
-    <div
-      style={{
-        marginTop:
-          "14px"
-      }}
-    >
+    <div className="mt-4">
       <button
         type="button"
         onClick={removePeer}
         disabled={loading}
-        style={{
-          padding:
-            "10px 14px",
-
-          border:
-            "1px solid #b00020",
-
-          borderRadius:
-            "6px",
-
-          background:
-            "white",
-
-          color:
-            "#b00020",
-
-          cursor:
-            loading
-              ? "not-allowed"
-              : "pointer"
-        }}
+        className="app-button-danger"
       >
         {
           loading
@@ -145,7 +120,7 @@ export default function RemovePeerButton({
 
       {
         message && (
-          <p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             {message}
           </p>
         )

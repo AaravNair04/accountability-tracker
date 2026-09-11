@@ -131,17 +131,12 @@ export default function PeerInviteForm() {
       onSubmit={
         handleSubmit
       }
-      style={{
-        maxWidth: "500px"
-      }}
+      className="max-w-xl space-y-3"
     >
 
       <label
         htmlFor="peerEmail"
-        style={{
-          display: "block",
-          marginBottom: "8px"
-        }}
+        className="block text-sm font-semibold text-slate-700 dark:text-slate-200"
       >
         Peer&apos;s email
       </label>
@@ -159,31 +154,14 @@ export default function PeerInviteForm() {
         }
         placeholder="friend@example.com"
         disabled={loading}
-        style={{
-          width: "100%",
-          boxSizing:
-            "border-box",
-
-          padding: "10px",
-
-          marginBottom:
-            "10px"
-        }}
+        className="w-full rounded-lg border px-4 py-3"
       />
 
 
       <button
         type="submit"
         disabled={loading}
-        style={{
-          padding:
-            "10px 16px",
-
-          cursor:
-            loading
-              ? "not-allowed"
-              : "pointer"
-        }}
+        className="app-button-primary"
       >
 
         {
@@ -198,12 +176,7 @@ export default function PeerInviteForm() {
       {
         message && (
 
-          <p
-            style={{
-              marginTop:
-                "12px"
-            }}
-          >
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             {message}
           </p>
 

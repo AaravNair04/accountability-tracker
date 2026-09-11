@@ -133,6 +133,7 @@ export default function RevokeDeviceButton({
         disabled={
           loading
         }
+        className="app-button-danger"
       >
         {
           loading
@@ -144,15 +145,7 @@ export default function RevokeDeviceButton({
 
       {
         error && (
-          <p
-            style={{
-              color:
-                "crimson",
-
-              fontSize:
-                "13px"
-            }}
-          >
+          <p className="mt-2 text-sm text-red-600 dark:text-red-300">
             {error}
           </p>
         )

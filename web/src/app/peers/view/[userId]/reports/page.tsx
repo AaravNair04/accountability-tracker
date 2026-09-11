@@ -102,15 +102,9 @@ export default async function PeerReportsPage({
   ) {
 
     return (
-      <main
-        style={{
-          maxWidth: "900px",
-          margin: "0 auto",
-          padding: "40px 20px"
-        }}
-      >
+      <main className="app-page-narrow space-y-6">
 
-        <h1>
+        <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
           Access Denied
         </h1>
 
@@ -160,13 +154,7 @@ export default async function PeerReportsPage({
 
 
   return (
-    <main
-      style={{
-        maxWidth: "900px",
-        margin: "0 auto",
-        padding: "40px 20px"
-      }}
-    >
+    <main className="app-page-narrow space-y-6">
 
       <Link
         href={
@@ -177,7 +165,7 @@ export default async function PeerReportsPage({
       </Link>
 
 
-      <h1>
+      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
         Accountability Reports
       </h1>
 
