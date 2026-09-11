@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  countShortActiveUsageSessions,
   groupContinuousUsageSessions
 } from "../src/lib/usage/activitySegments";
 
@@ -39,6 +40,49 @@ function session(
       )
   };
 }
+
+
+test(
+  "counts only active sessions under the visible duration threshold",
+  () => {
+    const count =
+      countShortActiveUsageSessions([
+        session(
+          "a",
+          "youtube",
+          "active",
+          "2026-09-11T10:00:00.000Z",
+          "2026-09-11T10:02:59.000Z"
+        ),
+        session(
+          "b",
+          "youtube",
+          "active",
+          "2026-09-11T10:03:00.000Z",
+          "2026-09-11T10:06:00.000Z"
+        ),
+        session(
+          "c",
+          "youtube",
+          "background_audio",
+          "2026-09-11T10:07:00.000Z",
+          "2026-09-11T10:08:00.000Z"
+        ),
+        session(
+          "d",
+          "twitch_tv",
+          "active",
+          "2026-09-11T10:09:00.000Z",
+          "2026-09-11T10:10:00.000Z"
+        )
+      ]);
+
+    assert.equal(
+      count,
+      2
+    );
+  }
+);
 
 
 test(

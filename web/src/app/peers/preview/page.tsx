@@ -12,6 +12,8 @@ import {
 } from "@/lib/reports/trackingCoverage";
 import { createClient } from "@/lib/supabase/server";
 import {
+  countShortActiveUsageSessions,
+  MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS,
   groupContinuousUsageSessions
 } from "@/lib/usage/activitySegments";
 
@@ -355,11 +357,17 @@ export default async function PeerPreviewPage() {
       clippedSessions,
       {
         minimumSegmentDurationSeconds:
-          3 * 60
+          MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS
       }
     ).slice(
       0,
       20
+    );
+
+  const shortActiveDistractionCount =
+    countShortActiveUsageSessions(
+      clippedSessions,
+      MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS
     );
 
   const recentReports =
@@ -674,6 +682,13 @@ export default async function PeerPreviewPage() {
         <h2>
           Recent Activity
         </h2>
+
+        <p>
+          Short active distractions today:{" "}
+          <strong>
+            {shortActiveDistractionCount}
+          </strong>
+        </p>
 
         {
           recentActivitySegments.length ===

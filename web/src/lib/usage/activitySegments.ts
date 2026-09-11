@@ -28,6 +28,25 @@ const CONTINUOUS_SESSION_GAP_MS =
   3 * 60 * 1000;
 
 
+export const MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS =
+  3 * 60;
+
+
+export function countShortActiveUsageSessions(
+  sessions: UsageActivitySession[],
+  minimumDurationSeconds =
+    MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS
+) {
+  return sessions.filter(
+    (session) =>
+      session.type ===
+        "active" &&
+      session.durationSeconds <
+        minimumDurationSeconds
+  ).length;
+}
+
+
 function canBridgeAcrossShortSession(
   sessions: UsageActivitySession[],
   startIndex: number,
