@@ -7,6 +7,9 @@ import {
   createHash
 } from "node:crypto";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -294,6 +297,30 @@ export async function POST(
         }
       });
 
+    await recordAuditEvent({
+      userId,
+
+      actorUserId:
+        userId,
+
+      action:
+        "tracked_site_enabled",
+
+      subjectType:
+        "tracked_site",
+
+      subjectId:
+        trackedSite.id,
+
+      metadata: {
+        hostname:
+          trackedSite.hostname,
+
+        site:
+          trackedSite.site
+      }
+    });
+
     return NextResponse.json(
       {
         success:
@@ -426,6 +453,30 @@ export async function DELETE(
       data: {
         enabled:
           false
+      }
+    });
+
+    await recordAuditEvent({
+      userId,
+
+      actorUserId:
+        userId,
+
+      action:
+        "tracked_site_disabled",
+
+      subjectType:
+        "tracked_site",
+
+      subjectId:
+        trackedSite.id,
+
+      metadata: {
+        hostname:
+          trackedSite.hostname,
+
+        site:
+          trackedSite.site
       }
     });
 

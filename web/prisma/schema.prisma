@@ -19,10 +19,27 @@ model User {
   reportResponses   ReportResponse[] @relation("ReportResponsePeer")
   peerRelationships TrustedPeer[]    @relation("PeerOwner")
   accountabilityFor TrustedPeer[]    @relation("AccountabilityPeer")
+  auditEvents       AuditEvent[]
   sessions          UsageSession[]
   trackedSites      TrackedSite[]
 
   @@map("users")
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  action      String
+  subjectType String
+  subjectId   String?
+  actorUserId String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([action])
+  @@map("audit_events")
 }
 
 model TrackedSite {

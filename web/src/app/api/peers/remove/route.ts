@@ -3,6 +3,9 @@ import {
   NextResponse
 } from "next/server";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -66,6 +69,9 @@ export async function POST(
             true,
 
           ownerId:
+            true,
+
+          peerId:
             true,
 
           revokedAt:
@@ -135,6 +141,50 @@ export async function POST(
             new Date()
         }
       });
+
+    await recordAuditEvent({
+      userId:
+        relationship.ownerId,
+
+      actorUserId:
+        user.id,
+
+      action:
+        "peer_access_revoked",
+
+      subjectType:
+        "trusted_peer",
+
+      subjectId:
+        updatedRelationship.id,
+
+      metadata: {
+        peerId:
+          relationship.peerId
+      }
+    });
+
+    await recordAuditEvent({
+      userId:
+        relationship.peerId,
+
+      actorUserId:
+        user.id,
+
+      action:
+        "peer_access_revoked",
+
+      subjectType:
+        "trusted_peer",
+
+      subjectId:
+        updatedRelationship.id,
+
+      metadata: {
+        ownerId:
+          relationship.ownerId
+      }
+    });
 
     return NextResponse.json(
       {

@@ -3,6 +3,9 @@ import {
   NextResponse
 } from "next/server";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -118,6 +121,29 @@ export async function POST(
       data: {
         revokedAt:
           new Date()
+      }
+    });
+
+
+    await recordAuditEvent({
+      userId:
+        user.id,
+
+      actorUserId:
+        user.id,
+
+      action:
+        "device_revoked",
+
+      subjectType:
+        "device",
+
+      subjectId:
+        device.id,
+
+      metadata: {
+        deviceName:
+          device.name
       }
     });
 

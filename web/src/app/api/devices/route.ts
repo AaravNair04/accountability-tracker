@@ -7,6 +7,9 @@ import {
   randomBytes
 } from "node:crypto";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -169,6 +172,29 @@ export async function POST() {
             user.id
         }
       });
+
+
+    await recordAuditEvent({
+      userId:
+        user.id,
+
+      actorUserId:
+        user.id,
+
+      action:
+        "device_link_started",
+
+      subjectType:
+        "device",
+
+      subjectId:
+        device.id,
+
+      metadata: {
+        deviceName:
+          device.name
+      }
+    });
 
 
     // --------------------------------------------------

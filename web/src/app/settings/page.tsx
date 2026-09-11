@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { getEnabledTrackedSites } from "@/lib/trackedSites";
 
+import AuditHistorySettings from "./AuditHistorySettings";
 import DataExportSettings from "./DataExportSettings";
 import DataRetentionSettings from "./DataRetentionSettings";
 import DeleteTrackingHistorySettings from "./DeleteTrackingHistorySettings";
@@ -80,6 +81,22 @@ export default async function SettingsPage() {
       user.id
     );
 
+  const auditEvents =
+    await prisma.auditEvent.findMany({
+      where: {
+        userId:
+          user.id
+      },
+
+      orderBy: {
+        createdAt:
+          "desc"
+      },
+
+      take:
+        25
+    });
+
 
   return (
     <main
@@ -137,6 +154,14 @@ export default async function SettingsPage() {
 
 
       <DeleteTrackingHistorySettings />
+
+
+      <AuditHistorySettings
+        events={auditEvents}
+        timeZone={
+          profile.timezone
+        }
+      />
 
     </main>
   );

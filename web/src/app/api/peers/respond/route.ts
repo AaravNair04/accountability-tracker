@@ -3,6 +3,9 @@ import {
   NextResponse
 } from "next/server";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -185,6 +188,55 @@ export async function POST(
         }
 
       });
+
+
+    await recordAuditEvent({
+      userId:
+        invitation.ownerId,
+
+      actorUserId:
+        user.id,
+
+      action:
+        action === "accept"
+          ? "peer_invitation_accepted"
+          : "peer_invitation_rejected",
+
+      subjectType:
+        "trusted_peer",
+
+      subjectId:
+        updatedInvitation.id,
+
+      metadata: {
+        peerId:
+          user.id
+      }
+    });
+
+    await recordAuditEvent({
+      userId:
+        user.id,
+
+      actorUserId:
+        user.id,
+
+      action:
+        action === "accept"
+          ? "peer_invitation_accepted"
+          : "peer_invitation_rejected",
+
+      subjectType:
+        "trusted_peer",
+
+      subjectId:
+        updatedInvitation.id,
+
+      metadata: {
+        ownerId:
+          invitation.ownerId
+      }
+    });
 
 
     return NextResponse.json(

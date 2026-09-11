@@ -3,6 +3,9 @@ import {
   NextResponse
 } from "next/server";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -120,6 +123,29 @@ export async function POST(
         }
 
       });
+
+
+    await recordAuditEvent({
+      userId:
+        user.id,
+
+      actorUserId:
+        user.id,
+
+      action:
+        "timezone_changed",
+
+      subjectType:
+        "user_settings",
+
+      subjectId:
+        user.id,
+
+      metadata: {
+        timezone:
+          updatedUser.timezone
+      }
+    });
 
 
     return NextResponse.json(
