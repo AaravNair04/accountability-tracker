@@ -111,3 +111,17 @@ body {
     @apply rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 dark:bg-red-500 dark:hover:bg-red-400;
   }
 }
+
+@keyframes loading-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  50% {
+    transform: translateX(120%);
+  }
+
+  100% {
+    transform: translateX(360%);
+  }
+}

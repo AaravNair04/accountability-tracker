@@ -123,6 +123,11 @@ export default function AppChrome({
                         <Link
                           key={item.href}
                           href={item.href}
+                          aria-current={
+                            isActive
+                              ? "page"
+                              : undefined
+                          }
                           className={
                             [
                               "whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold no-underline transition-colors",

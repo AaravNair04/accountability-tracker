@@ -166,74 +166,78 @@ export default async function Home() {
       }
     });
 
-  const unreadReportCount =
-    await prisma.reportDelivery.count({
-      where: {
-        peerId:
-          user.id,
+  const [
+    unreadReportCount,
+    pendingInvitationCount,
+    newPeerResponseCount,
+    sentPendingInvitationCount
+  ] =
+    await Promise.all([
+      prisma.reportDelivery.count({
+        where: {
+          peerId:
+            user.id,
 
-        viewedAt:
-          null,
+          viewedAt:
+            null,
 
-        report: {
-          user: {
-            peerRelationships: {
-              some: {
-                peerId:
-                  user.id,
+          report: {
+            user: {
+              peerRelationships: {
+                some: {
+                  peerId:
+                    user.id,
 
-                status:
-                  "accepted",
+                  status:
+                    "accepted",
 
-                revokedAt:
-                  null
+                  revokedAt:
+                    null
+                }
               }
             }
           }
         }
-      }
-    });
+      }),
 
-  const pendingInvitationCount =
-    await prisma.trustedPeer.count({
-      where: {
-        peerId:
-          user.id,
+      prisma.trustedPeer.count({
+        where: {
+          peerId:
+            user.id,
 
-        status:
-          "pending",
+          status:
+            "pending",
 
-        revokedAt:
-          null
-      }
-    });
-
-  const newPeerResponseCount =
-    await prisma.reportResponse.count({
-      where: {
-        ownerViewedAt:
-          null,
-
-        report: {
-          userId:
-            user.id
+          revokedAt:
+            null
         }
-      }
-    });
+      }),
 
-  const sentPendingInvitationCount =
-    await prisma.trustedPeer.count({
-      where: {
-        ownerId:
-          user.id,
+      prisma.reportResponse.count({
+        where: {
+          ownerViewedAt:
+            null,
 
-        status:
-          "pending",
+          report: {
+            userId:
+              user.id
+          }
+        }
+      }),
 
-        revokedAt:
-          null
-      }
-    });
+      prisma.trustedPeer.count({
+        where: {
+          ownerId:
+            user.id,
+
+          status:
+            "pending",
+
+          revokedAt:
+            null
+        }
+      })
+    ]);
 
   const notificationCount =
     unreadReportCount +
@@ -261,28 +265,45 @@ export default async function Home() {
   // TODAY'S USAGE - NO 100-ROW CAP
   // --------------------------------------------------
 
-  const sessions =
-    await prisma.usageSession.findMany({
-      where: {
-        userId:
-          user.id,
+  const [
+    sessions,
+    coverage,
+    current
+  ] =
+    await Promise.all([
+      prisma.usageSession.findMany({
+        where: {
+          userId:
+            user.id,
 
-        startTime: {
-          lt:
-            now
+          startTime: {
+            lt:
+              now
+          },
+
+          endTime: {
+            gt:
+              startOfToday
+          }
         },
 
-        endTime: {
-          gt:
-            startOfToday
+        orderBy: {
+          startTime:
+            "desc"
         }
-      },
+      }),
 
-      orderBy: {
-        startTime:
-          "desc"
-      }
-    });
+      calculateTrackingCoverage(
+        user.id,
+        startOfToday,
+        now
+      ),
+
+      getCurrentTrackingStatus(
+        user.id,
+        now
+      )
+    ]);
 
   const clippedSessions =
     sessions
@@ -324,50 +345,14 @@ export default async function Home() {
           0
       );
 
-  const totalSeconds =
-    clippedSessions.reduce(
-      (
-        total,
-        session
-      ) =>
-        total +
-        session.durationSeconds,
-      0
-    );
+  let totalSeconds =
+    0;
 
-  const activeSeconds =
-    clippedSessions
-      .filter(
-        (session) =>
-          session.type ===
-          "active"
-      )
-      .reduce(
-        (
-          total,
-          session
-        ) =>
-          total +
-          session.durationSeconds,
-        0
-      );
+  let activeSeconds =
+    0;
 
-  const backgroundSeconds =
-    clippedSessions
-      .filter(
-        (session) =>
-          session.type ===
-          "background_audio"
-      )
-      .reduce(
-        (
-          total,
-          session
-        ) =>
-          total +
-          session.durationSeconds,
-        0
-      );
+  let backgroundSeconds =
+    0;
 
   const siteTotals =
     new Map<
@@ -379,6 +364,25 @@ export default async function Home() {
     const session
     of clippedSessions
   ) {
+    totalSeconds +=
+      session.durationSeconds;
+
+    if (
+      session.type ===
+      "active"
+    ) {
+      activeSeconds +=
+        session.durationSeconds;
+    }
+
+    if (
+      session.type ===
+      "background_audio"
+    ) {
+      backgroundSeconds +=
+        session.durationSeconds;
+    }
+
     siteTotals.set(
       session.site,
       (
@@ -406,19 +410,6 @@ export default async function Home() {
   // --------------------------------------------------
   // SHARED INTEGRITY LOGIC
   // --------------------------------------------------
-
-  const coverage =
-    await calculateTrackingCoverage(
-      user.id,
-      startOfToday,
-      now
-    );
-
-  const current =
-    await getCurrentTrackingStatus(
-      user.id,
-      now
-    );
 
   const totalCoverage =
     coverage.goodSeconds +

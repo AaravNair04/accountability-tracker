@@ -29,24 +29,41 @@ export default async function SettingsPage() {
   }
 
 
-  // Load current timezone.
-  const profile =
-    await prisma.user.findUnique({
+  const [
+    profile,
+    auditEvents
+  ] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: {
+          id:
+            user.id
+        },
 
-      where: {
-        id:
-          user.id
-      },
+        select: {
+          timezone:
+            true,
 
-      select: {
-        timezone:
-          true,
+          rawDataRetentionDays:
+            true
+        }
+      }),
 
-        rawDataRetentionDays:
-          true
-      }
+      prisma.auditEvent.findMany({
+        where: {
+          userId:
+            user.id
+        },
 
-    });
+        orderBy: {
+          createdAt:
+            "desc"
+        },
+
+        take:
+          25
+      })
+    ]);
 
 
   if (!profile) {
@@ -66,23 +83,6 @@ export default async function SettingsPage() {
     );
 
   }
-
-  const auditEvents =
-    await prisma.auditEvent.findMany({
-      where: {
-        userId:
-          user.id
-      },
-
-      orderBy: {
-        createdAt:
-          "desc"
-      },
-
-      take:
-        25
-    });
-
 
   return (
     <main className="app-page-narrow space-y-6">

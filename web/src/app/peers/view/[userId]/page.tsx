@@ -217,27 +217,44 @@ export default async function PeerViewPage({
   // USAGE
   // --------------------------------------------------
 
-  const sessions =
-    await prisma.usageSession.findMany({
-      where: {
-        userId,
+  const [
+    sessions,
+    coverage,
+    current
+  ] =
+    await Promise.all([
+      prisma.usageSession.findMany({
+        where: {
+          userId,
 
-        startTime: {
-          lt:
-            now
+          startTime: {
+            lt:
+              now
+          },
+
+          endTime: {
+            gt:
+              startOfToday
+          }
         },
 
-        endTime: {
-          gt:
-            startOfToday
+        orderBy: {
+          startTime:
+            "desc"
         }
-      },
+      }),
 
-      orderBy: {
-        startTime:
-          "desc"
-      }
-    });
+      calculateTrackingCoverage(
+        userId,
+        startOfToday,
+        now
+      ),
+
+      getCurrentTrackingStatus(
+        userId,
+        now
+      )
+    ]);
 
   const clippedSessions =
     sessions
@@ -278,50 +295,14 @@ export default async function PeerViewPage({
           0
       );
 
-  const totalSeconds =
-    clippedSessions.reduce(
-      (
-        total,
-        session
-      ) =>
-        total +
-        session.durationSeconds,
-      0
-    );
+  let totalSeconds =
+    0;
 
-  const activeSeconds =
-    clippedSessions
-      .filter(
-        (session) =>
-          session.type ===
-          "active"
-      )
-      .reduce(
-        (
-          total,
-          session
-        ) =>
-          total +
-          session.durationSeconds,
-        0
-      );
+  let activeSeconds =
+    0;
 
-  const backgroundSeconds =
-    clippedSessions
-      .filter(
-        (session) =>
-          session.type ===
-          "background_audio"
-      )
-      .reduce(
-        (
-          total,
-          session
-        ) =>
-          total +
-          session.durationSeconds,
-        0
-      );
+  let backgroundSeconds =
+    0;
 
   const siteTotals =
     new Map<
@@ -333,6 +314,25 @@ export default async function PeerViewPage({
     const session
     of clippedSessions
   ) {
+    totalSeconds +=
+      session.durationSeconds;
+
+    if (
+      session.type ===
+      "active"
+    ) {
+      activeSeconds +=
+        session.durationSeconds;
+    }
+
+    if (
+      session.type ===
+      "background_audio"
+    ) {
+      backgroundSeconds +=
+        session.durationSeconds;
+    }
+
     siteTotals.set(
       session.site,
       (
@@ -356,23 +356,6 @@ export default async function PeerViewPage({
         first[1]
     );
 
-
-  // --------------------------------------------------
-  // SHARED TRACKING INTEGRITY
-  // --------------------------------------------------
-
-  const coverage =
-    await calculateTrackingCoverage(
-      userId,
-      startOfToday,
-      now
-    );
-
-  const current =
-    await getCurrentTrackingStatus(
-      userId,
-      now
-    );
 
   const totalCoverage =
     coverage.goodSeconds +

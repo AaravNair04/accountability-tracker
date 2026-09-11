@@ -69,51 +69,69 @@ export default async function PeersPage() {
   }
 
 
-  // Keep Supabase Auth and Prisma synchronized.
-  const profile =
-    await prisma.user.upsert({
+  const [
+    profile,
+    sentInvitations,
+    receivedInvitations
+  ] =
+    await Promise.all([
+      // Keep Supabase Auth and Prisma synchronized.
+      prisma.user.upsert({
+        where: {
+          id:
+            user.id
+        },
 
-    where: {
-      id:
-        user.id
-    },
+        update: {
+          email:
+            user.email.toLowerCase()
+        },
 
-    update: {
-      email:
-        user.email.toLowerCase()
-    },
+        create: {
+          id:
+            user.id,
 
-    create: {
-      id:
-        user.id,
+          email:
+            user.email.toLowerCase()
+        }
+      }),
 
-      email:
-        user.email.toLowerCase()
-    }
+      // People I invited to hold me accountable.
+      prisma.trustedPeer.findMany({
+        where: {
+          ownerId:
+            user.id
+        },
 
-  });
+        include: {
+          peer:
+            true
+        },
 
+        orderBy: {
+          createdAt:
+            "desc"
+        }
+      }),
 
-  // People I invited to hold me accountable.
-  const sentInvitations =
-    await prisma.trustedPeer.findMany({
+      // People who asked me to hold them accountable.
+      prisma.trustedPeer.findMany({
+        where: {
+          peerId:
+            user.id
+        },
 
-      where: {
-        ownerId:
-          user.id
-      },
+        include: {
+          owner:
+            true
+        },
 
-      include: {
-        peer:
-          true
-      },
-
-      orderBy: {
-        createdAt:
-          "desc"
-      }
-
-    });
+        orderBy: {
+          createdAt:
+            "desc"
+        }
+      })
+    ]);
 
 
   const sentPeerIds =
@@ -205,29 +223,6 @@ export default async function PeersPage() {
       );
     }
   }
-
-
-  // People who asked me to hold them accountable.
-  const receivedInvitations =
-    await prisma.trustedPeer.findMany({
-
-      where: {
-        peerId:
-          user.id
-      },
-
-      include: {
-        owner:
-          true
-      },
-
-      orderBy: {
-        createdAt:
-          "desc"
-      }
-
-    });
-
 
   return (
     <main className="app-page-narrow space-y-6">
