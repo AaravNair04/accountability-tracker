@@ -12,6 +12,7 @@ web/node_modules/
 
 dist/
 web/.next/
+web/.test-build/
 web/out/
 web/build/
 
