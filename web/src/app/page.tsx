@@ -426,7 +426,11 @@ export default async function Home() {
 
   const recentActivitySegments =
     groupContinuousUsageSessions(
-      clippedSessions
+      clippedSessions,
+      {
+        minimumSegmentDurationSeconds:
+          3 * 60
+      }
     ).slice(
       0,
       20
@@ -913,7 +917,7 @@ export default async function Home() {
             0
             ? (
               <p>
-                No sessions recorded today.
+                No activity blocks over 3 minutes today.
               </p>
             )
             : (

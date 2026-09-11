@@ -42,7 +42,7 @@ function session(
 
 
 test(
-  "groups same site and type within a five minute gap",
+  "groups same site and type within a three minute gap",
   () => {
     const segments =
       groupContinuousUsageSessions([
@@ -57,7 +57,7 @@ test(
           "b",
           "youtube",
           "active",
-          "2026-09-11T10:09:00.000Z",
+          "2026-09-11T10:08:00.000Z",
           "2026-09-11T10:10:00.000Z"
         )
       ]);
@@ -74,14 +74,14 @@ test(
 
     assert.equal(
       segments[0].durationSeconds,
-      360
+      420
     );
   }
 );
 
 
 test(
-  "does not group different types or large gaps",
+  "does not group different types or gaps over three minutes",
   () => {
     const segments =
       groupContinuousUsageSessions([
@@ -103,10 +103,144 @@ test(
           "c",
           "youtube",
           "active",
-          "2026-09-11T10:10:01.000Z",
-          "2026-09-11T10:11:01.000Z"
+          "2026-09-11T10:06:01.000Z",
+          "2026-09-11T10:07:01.000Z"
         )
       ]);
+
+    assert.equal(
+      segments.length,
+      3
+    );
+  }
+);
+
+
+test(
+  "bridges short interruptions before applying the visible duration threshold",
+  () => {
+    const segments =
+      groupContinuousUsageSessions(
+        [
+          session(
+            "a",
+            "youtube",
+            "active",
+            "2026-09-11T10:00:00.000Z",
+            "2026-09-11T10:04:00.000Z"
+          ),
+          session(
+            "b",
+            "youtube",
+            "background_audio",
+            "2026-09-11T10:04:20.000Z",
+            "2026-09-11T10:05:20.000Z"
+          ),
+          session(
+            "c",
+            "youtube",
+            "active",
+            "2026-09-11T10:06:00.000Z",
+            "2026-09-11T10:10:00.000Z"
+          )
+        ],
+        {
+          minimumSegmentDurationSeconds:
+            3 * 60
+        }
+      );
+
+    assert.equal(
+      segments.length,
+      1
+    );
+
+    assert.equal(
+      segments[0].type,
+      "active"
+    );
+
+    assert.equal(
+      segments[0].sessionCount,
+      2
+    );
+
+    assert.equal(
+      segments[0].durationSeconds,
+      8 * 60
+    );
+  }
+);
+
+
+test(
+  "hides grouped segments under the visible duration threshold",
+  () => {
+    const segments =
+      groupContinuousUsageSessions(
+        [
+          session(
+            "a",
+            "youtube",
+            "active",
+            "2026-09-11T10:00:00.000Z",
+            "2026-09-11T10:01:00.000Z"
+          ),
+          session(
+            "b",
+            "youtube",
+            "active",
+            "2026-09-11T10:02:00.000Z",
+            "2026-09-11T10:03:00.000Z"
+          )
+        ],
+        {
+          minimumSegmentDurationSeconds:
+            3 * 60
+        }
+      );
+
+    assert.equal(
+      segments.length,
+      0
+    );
+  }
+);
+
+
+test(
+  "keeps long different-type segments from being bridged",
+  () => {
+    const segments =
+      groupContinuousUsageSessions(
+        [
+          session(
+            "a",
+            "youtube",
+            "active",
+            "2026-09-11T10:00:00.000Z",
+            "2026-09-11T10:04:00.000Z"
+          ),
+          session(
+            "b",
+            "youtube",
+            "background_audio",
+            "2026-09-11T10:04:30.000Z",
+            "2026-09-11T10:08:30.000Z"
+          ),
+          session(
+            "c",
+            "youtube",
+            "active",
+            "2026-09-11T10:09:00.000Z",
+            "2026-09-11T10:13:00.000Z"
+          )
+        ],
+        {
+          minimumSegmentDurationSeconds:
+            3 * 60
+        }
+      );
 
     assert.equal(
       segments.length,

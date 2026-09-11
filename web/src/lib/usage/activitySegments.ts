@@ -19,13 +19,90 @@ export type UsageActivitySegment = {
 };
 
 
+type GroupContinuousUsageSessionsOptions = {
+  minimumSegmentDurationSeconds?: number;
+};
+
+
 const CONTINUOUS_SESSION_GAP_MS =
-  5 * 60 * 1000;
+  3 * 60 * 1000;
+
+
+function canBridgeAcrossShortSession(
+  sessions: UsageActivitySession[],
+  startIndex: number,
+  previousSegment: UsageActivitySegment,
+  minimumSegmentDurationSeconds: number
+) {
+  for (
+    let index =
+      startIndex;
+    index <
+      sessions.length;
+    index +=
+      1
+  ) {
+    const candidate =
+      sessions[
+        index
+      ];
+
+    const gapFromPreviousSegment =
+      candidate.startTime.getTime() -
+      previousSegment.endTime.getTime();
+
+    if (
+      gapFromPreviousSegment >
+      CONTINUOUS_SESSION_GAP_MS
+    ) {
+      return false;
+    }
+
+    if (
+      candidate.site ===
+        previousSegment.site &&
+      candidate.type ===
+        previousSegment.type
+    ) {
+      return true;
+    }
+
+    if (
+      candidate.durationSeconds >=
+      minimumSegmentDurationSeconds
+    ) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+
+function mergeSegment(
+  segment: UsageActivitySegment,
+  session: UsageActivitySession
+) {
+  segment.endTime =
+    session.endTime;
+
+  segment.durationSeconds +=
+    session.durationSeconds;
+
+  segment.sessionCount +=
+    1;
+}
 
 
 export function groupContinuousUsageSessions(
-  sessions: UsageActivitySession[]
+  sessions: UsageActivitySession[],
+  options:
+    GroupContinuousUsageSessionsOptions = {}
 ) {
+  const minimumSegmentDurationSeconds =
+    options.minimumSegmentDurationSeconds ??
+    0;
+
   const sortedSessions =
     [...sessions].sort(
       (
@@ -40,9 +117,18 @@ export function groupContinuousUsageSessions(
     UsageActivitySegment[] = [];
 
   for (
-    const session
-    of sortedSessions
+    let index =
+      0;
+    index <
+      sortedSessions.length;
+    index +=
+      1
   ) {
+    const session =
+      sortedSessions[
+        index
+      ];
+
     const previousSegment =
       segments[
         segments.length - 1
@@ -61,15 +147,31 @@ export function groupContinuousUsageSessions(
     if (
       isContinuous
     ) {
-      previousSegment.endTime =
-        session.endTime;
+      mergeSegment(
+        previousSegment,
+        session
+      );
 
-      previousSegment.durationSeconds +=
-        session.durationSeconds;
+      continue;
+    }
 
-      previousSegment.sessionCount +=
-        1;
+    const isShortInterruption =
+      minimumSegmentDurationSeconds >
+        0 &&
+      previousSegment &&
+      session.durationSeconds <
+        minimumSegmentDurationSeconds &&
+      canBridgeAcrossShortSession(
+        sortedSessions,
+        index +
+          1,
+        previousSegment,
+        minimumSegmentDurationSeconds
+      );
 
+    if (
+      isShortInterruption
+    ) {
       continue;
     }
 
@@ -97,5 +199,11 @@ export function groupContinuousUsageSessions(
     });
   }
 
-  return segments.reverse();
+  return segments
+    .filter(
+      (segment) =>
+        segment.durationSeconds >=
+        minimumSegmentDurationSeconds
+    )
+    .reverse();
 }
