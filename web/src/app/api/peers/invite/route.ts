@@ -3,6 +3,9 @@ import {
   NextResponse
 } from "next/server";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -201,6 +204,57 @@ export async function POST(
           });
 
 
+        await recordAuditEvent({
+          userId:
+            currentUser.id,
+
+          actorUserId:
+            currentUser.id,
+
+          action:
+            "peer_invitation_sent",
+
+          subjectType:
+            "trusted_peer",
+
+          subjectId:
+            updatedRelationship.id,
+
+          metadata: {
+            peerEmail:
+              peer.email,
+
+            resent:
+              true
+          }
+        });
+
+        await recordAuditEvent({
+          userId:
+            peer.id,
+
+          actorUserId:
+            currentUser.id,
+
+          action:
+            "peer_invitation_received",
+
+          subjectType:
+            "trusted_peer",
+
+          subjectId:
+            updatedRelationship.id,
+
+          metadata: {
+            ownerEmail:
+              currentUser.email,
+
+            resent:
+              true
+          }
+        });
+
+
         return NextResponse.json(
           {
             success:
@@ -283,6 +337,57 @@ export async function POST(
           });
 
 
+        await recordAuditEvent({
+          userId:
+            currentUser.id,
+
+          actorUserId:
+            currentUser.id,
+
+          action:
+            "peer_invitation_sent",
+
+          subjectType:
+            "trusted_peer",
+
+          subjectId:
+            updatedRelationship.id,
+
+          metadata: {
+            peerEmail:
+              peer.email,
+
+            resent:
+              true
+          }
+        });
+
+        await recordAuditEvent({
+          userId:
+            peer.id,
+
+          actorUserId:
+            currentUser.id,
+
+          action:
+            "peer_invitation_received",
+
+          subjectType:
+            "trusted_peer",
+
+          subjectId:
+            updatedRelationship.id,
+
+          metadata: {
+            ownerEmail:
+              currentUser.email,
+
+            resent:
+              true
+          }
+        });
+
+
         return NextResponse.json(
           {
             success:
@@ -322,6 +427,57 @@ export async function POST(
         }
 
       });
+
+
+    await recordAuditEvent({
+      userId:
+        currentUser.id,
+
+      actorUserId:
+        currentUser.id,
+
+      action:
+        "peer_invitation_sent",
+
+      subjectType:
+        "trusted_peer",
+
+      subjectId:
+        invitation.id,
+
+      metadata: {
+        peerEmail:
+          peer.email,
+
+        resent:
+          false
+      }
+    });
+
+    await recordAuditEvent({
+      userId:
+        peer.id,
+
+      actorUserId:
+        currentUser.id,
+
+      action:
+        "peer_invitation_received",
+
+      subjectType:
+        "trusted_peer",
+
+      subjectId:
+        invitation.id,
+
+      metadata: {
+        ownerEmail:
+          currentUser.email,
+
+        resent:
+          false
+      }
+    });
 
 
     return NextResponse.json(

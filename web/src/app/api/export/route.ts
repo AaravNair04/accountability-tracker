@@ -367,7 +367,8 @@ export async function GET(
       peerRelationships,
       accountabilityFor,
       reportDeliveries,
-      reportResponses
+      reportResponses,
+      auditEvents
     ] =
       await Promise.all([
         prisma.user.findUnique({
@@ -581,6 +582,18 @@ export async function GET(
             createdAt:
               "desc"
           }
+        }),
+
+        prisma.auditEvent.findMany({
+          where: {
+            userId:
+              user.id
+          },
+
+          orderBy: {
+            createdAt:
+              "desc"
+          }
         })
       ]);
 
@@ -643,7 +656,9 @@ export async function GET(
 
         reportDeliveries,
 
-        reportResponses
+        reportResponses,
+
+        auditEvents
       };
 
     return new NextResponse(

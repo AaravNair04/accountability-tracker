@@ -4,6 +4,9 @@ import {
 } from "next/server";
 
 import {
+  recordAuditEvent
+} from "@/lib/auditLog";
+import {
   deleteExpiredRawData,
   isValidRetentionDays
 } from "@/lib/dataRetention";
@@ -114,6 +117,38 @@ export async function POST(
             user.id,
             rawDataRetentionDays
           );
+
+    await recordAuditEvent({
+      userId:
+        user.id,
+
+      actorUserId:
+        user.id,
+
+      action:
+        "data_retention_changed",
+
+      subjectType:
+        "user_settings",
+
+      subjectId:
+        user.id,
+
+      metadata: {
+        rawDataRetentionDays:
+          rawDataRetentionDays,
+
+        deletedUsageSessions:
+          cleanupResult?.deleted
+            .usageSessions ??
+          0,
+
+        deletedTrackingEvents:
+          cleanupResult?.deleted
+            .trackingEvents ??
+          0
+      }
+    });
 
     return NextResponse.json(
       {

@@ -2,6 +2,9 @@ import {
   NextResponse
 } from "next/server";
 
+import {
+  recordAuditEvent
+} from "@/lib/auditLog";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -104,6 +107,39 @@ export async function DELETE() {
           }
         })
       ]);
+
+    await recordAuditEvent({
+      userId,
+
+      actorUserId:
+        userId,
+
+      action:
+        "tracking_history_deleted",
+
+      subjectType:
+        "tracking_history",
+
+      subjectId:
+        userId,
+
+      metadata: {
+        reportResponses:
+          reportResponses.count,
+
+        reportDeliveries:
+          reportDeliveries.count,
+
+        dailyReports:
+          dailyReports.count,
+
+        usageSessions:
+          usageSessions.count,
+
+        trackingEvents:
+          trackingEvents.count
+      }
+    });
 
     return NextResponse.json(
       {

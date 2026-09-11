@@ -8,6 +8,9 @@ import {
 } from "node:crypto";
 
 import {
+  recordAuditEvent
+} from "@/lib/auditLog";
+import {
   prisma
 } from "@/lib/prisma";
 
@@ -172,6 +175,10 @@ export async function POST(
     const now =
       new Date();
 
+    const wasUnconfirmed =
+      device.confirmedAt ===
+      null;
+
     const updatedDevice =
       await prisma.device.update({
         where: {
@@ -197,6 +204,29 @@ export async function POST(
           )
         }
       });
+
+    if (
+      wasUnconfirmed
+    ) {
+      await recordAuditEvent({
+        userId:
+          device.userId,
+
+        action:
+          "device_link_confirmed",
+
+        subjectType:
+          "device",
+
+        subjectId:
+          device.id,
+
+        metadata: {
+          deviceName:
+            device.name
+        }
+      });
+    }
 
     await prisma.trackingEvent.create({
       data: {
