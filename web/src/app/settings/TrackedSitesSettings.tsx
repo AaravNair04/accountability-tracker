@@ -265,7 +265,7 @@ export default function TrackedSitesSettings({
         <input
           type="text"
           value={hostname}
-          placeholder="youtube.com"
+          placeholder="Enter a hostname (e.g. youtube.com)"
           disabled={loading}
           onChange={
             (event) =>
