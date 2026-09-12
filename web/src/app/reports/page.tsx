@@ -32,33 +32,6 @@ function formatDate(
 
 
 // --------------------------------------------------
-// FORMAT DATE TIME
-// --------------------------------------------------
-
-function formatDateTime(
-  date: Date,
-  timeZone: string
-) {
-
-  return new Intl.DateTimeFormat(
-    "en-US",
-    {
-      timeZone,
-
-      dateStyle:
-        "medium",
-
-      timeStyle:
-        "short"
-    }
-  ).format(
-    date
-  );
-
-}
-
-
-// --------------------------------------------------
 // PAGE
 // --------------------------------------------------
 
@@ -96,26 +69,6 @@ export default async function ReportsPage() {
       },
 
       include: {
-
-        deliveries: {
-
-          include: {
-
-            peer: {
-              select: {
-                id: true,
-                email: true
-              }
-            }
-
-          },
-
-          orderBy: {
-            createdAt:
-              "desc"
-          }
-
-        },
 
         responses: {
 
@@ -225,17 +178,6 @@ export default async function ReportsPage() {
                         : {};
 
 
-                    const responsesByPeerId =
-                      new Map(
-                        report.responses.map(
-                          (response) => [
-                            response.peer.id,
-                            response
-                          ]
-                        )
-                      );
-
-
                     return (
 
                       <article
@@ -280,125 +222,6 @@ export default async function ReportsPage() {
                             }
                           </strong>
                         </p>
-
-
-                        <hr />
-
-
-                        {/* DELIVERY STATUS */}
-
-                        <h3>
-                          Delivery Status
-                        </h3>
-
-
-                        {
-                          report.deliveries.length === 0
-                            ? (
-
-                              <p>
-                                This report has not
-                                been delivered to any
-                                accountability peers.
-                              </p>
-
-                            )
-                            : (
-
-                              <div>
-
-                                {
-                                  report.deliveries.map(
-                                    (delivery) => {
-                                      const response =
-                                        responsesByPeerId.get(
-                                          delivery.peer.id
-                                        );
-
-                                      return (
-
-                                        <div
-                                          key={
-                                            delivery.id
-                                          }
-                                          style={{
-                                            border:
-                                              "1px solid #ddd",
-
-                                            borderRadius:
-                                              "8px",
-
-                                            padding:
-                                              "14px",
-
-                                            marginTop:
-                                              "12px"
-                                          }}
-                                        >
-
-                                          <p>
-                                            <strong>
-                                              {
-                                                delivery
-                                                  .peer
-                                                  .email
-                                              }
-                                            </strong>
-                                          </p>
-
-
-                                          <p>
-                                            Delivered:{" "}
-                                            {
-                                              formatDateTime(
-                                                delivery.createdAt,
-                                                report.timezone
-                                              )
-                                            }
-                                          </p>
-
-
-                                          <p>
-                                            Viewed:{" "}
-                                            {
-                                              delivery.viewedAt
-                                                ? formatDateTime(
-                                                    delivery.viewedAt,
-                                                    report.timezone
-                                                  )
-                                                : "Not viewed yet"
-                                            }
-                                          </p>
-
-
-                                          <p
-                                            style={{
-                                              marginBottom:
-                                                0
-                                            }}
-                                          >
-                                            Response:{" "}
-                                            {
-                                              response
-                                                ? `Received ${formatDateTime(
-                                                    response.updatedAt,
-                                                    report.timezone
-                                                  )}`
-                                                : "No response yet"
-                                            }
-                                          </p>
-
-                                        </div>
-
-                                      );
-                                    }
-                                  )
-                                }
-
-                              </div>
-
-                            )
-                        }
 
 
                         <hr />

@@ -254,13 +254,28 @@ export default async function NotificationsPage() {
         Notifications
       </h1>
 
-      <p>
-        {
-          totalCount === 0
-            ? "Nothing needs your attention right now."
-            : `${totalCount} item${totalCount === 1 ? "" : "s"} need attention.`
-        }
-      </p>
+      {
+        totalCount === 0
+          ? (
+            <div className="app-card">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                No pending notifications right now.
+              </p>
+
+              <Link
+                href="/inbox"
+                className="app-button-primary mt-4 inline-flex no-underline"
+              >
+                Go to Inbox
+              </Link>
+            </div>
+          )
+          : (
+            <p>
+              {`${totalCount} item${totalCount === 1 ? "" : "s"} need attention.`}
+            </p>
+          )
+      }
 
       <hr
         style={{

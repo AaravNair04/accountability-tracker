@@ -250,314 +250,11 @@ export default async function PeersPage() {
       </p>
 
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-
-      {/* INVITE PEER */}
-
-      <section>
-
-        <h2>
-          Invite a Peer
-        </h2>
-
-
-        <PeerInviteForm />
-
-      </section>
-
-
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-
-      {/* PEOPLE HOLDING ME ACCOUNTABLE */}
-
-      <section>
-
-        <h2>
-          My Accountability Peers
-        </h2>
-
-
-        {
-          sentInvitations.length === 0
-            ? (
-              <p>
-                You haven&apos;t invited
-                anyone yet.
-              </p>
-            )
-            : (
-              <div>
-
-                {
-                  sentInvitations.map(
-                    (relationship) => {
-                      const latestDelivery =
-                        latestDeliveryByPeerId.get(
-                          relationship.peerId
-                        );
-
-                      const latestResponse =
-                        latestDelivery
-                          ?.report
-                          .responses
-                          .find(
-                            (response) =>
-                              response.peerId ===
-                              relationship.peerId
-                          );
-
-                      return (
-
-                      <div
-                        key={
-                          relationship.id
-                        }
-                        style={{
-                          border:
-                            "1px solid #ccc",
-
-                          borderRadius:
-                            "8px",
-
-                          padding:
-                            "16px",
-
-                          marginBottom:
-                            "10px"
-                        }}
-                      >
-
-                        <strong>
-                          {
-                            relationship
-                              .peer
-                              .email
-                          }
-                        </strong>
-
-
-                        <p>
-                          Status:{" "}
-
-                          <strong>
-                            {
-                              relationship
-                                .status
-                            }
-                          </strong>
-                        </p>
-
-
-                        {
-                          relationship.status ===
-                            "pending" && (
-
-                            <p>
-                              Waiting for this person
-                              to accept your invitation.
-                            </p>
-
-                          )
-                        }
-
-
-                        {
-                          relationship.status ===
-                            "accepted" &&
-                          relationship.revokedAt ===
-                            null && (
-
-                            <>
-                              <p>
-                                This person is holding
-                                you accountable.
-                              </p>
-
-
-                              <div
-                                style={{
-                                  borderTop:
-                                    "1px solid #eee",
-
-                                  marginTop:
-                                    "14px",
-
-                                  paddingTop:
-                                    "14px"
-                                }}
-                              >
-                                <p
-                                  style={{
-                                    marginTop:
-                                      0
-                                  }}
-                                >
-                                  <strong>
-                                    Latest report:
-                                  </strong>{" "}
-
-                                  {
-                                    latestDelivery
-                                      ? formatReportDate(
-                                          latestDelivery
-                                            .report
-                                            .reportDate
-                                        )
-                                      : "No completed report delivered yet"
-                                  }
-                                </p>
-
-
-                                {
-                                  latestDelivery && (
-                                    <>
-                                      <p>
-                                        <strong>
-                                          Delivered:
-                                        </strong>{" "}
-
-                                        {
-                                          formatDateTime(
-                                            latestDelivery.createdAt,
-                                            profile.timezone
-                                          )
-                                        }
-                                      </p>
-
-
-                                      <p>
-                                        <strong>
-                                          Viewed:
-                                        </strong>{" "}
-
-                                        {
-                                          latestDelivery.viewedAt
-                                            ? formatDateTime(
-                                                latestDelivery.viewedAt,
-                                                profile.timezone
-                                              )
-                                            : "Not viewed yet"
-                                        }
-                                      </p>
-
-
-                                      <p>
-                                        <strong>
-                                          Response:
-                                        </strong>{" "}
-
-                                        {
-                                          latestResponse
-                                            ? `Received ${formatDateTime(
-                                                latestResponse.updatedAt,
-                                                profile.timezone
-                                              )}`
-                                            : "No response yet"
-                                        }
-                                      </p>
-
-
-                                      <p
-                                        style={{
-                                          marginBottom:
-                                            0
-                                        }}
-                                      >
-                                        <Link href="/reports">
-                                          View report history
-                                        </Link>
-                                      </p>
-                                    </>
-                                  )
-                                }
-                              </div>
-
-
-                              <RemovePeerButton
-                                relationshipId={
-                                  relationship.id
-                                }
-
-                                peerEmail={
-                                  relationship
-                                    .peer
-                                    .email
-                                }
-                              />
-                            </>
-
-                          )
-                        }
-
-
-                        {
-                          relationship.status ===
-                            "rejected" && (
-
-                            <p>
-                              This invitation was
-                              rejected.
-                            </p>
-
-                          )
-                        }
-
-
-                        {
-                          (
-                            relationship.revokedAt ||
-                            relationship.status ===
-                              "revoked"
-                          ) && (
-
-                            <p>
-                              Access revoked. This peer
-                              can no longer view your
-                              accountability reports.
-                            </p>
-
-                          )
-                        }
-
-                      </div>
-
-                      );
-                    }
-                  )
-                }
-
-              </div>
-            )
-        }
-
-      </section>
-
-
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-
       {/* PEOPLE I HOLD ACCOUNTABLE */}
 
-      <section>
+      <section className="space-y-4">
 
-        <h2>
+        <h2 className="app-section-title">
           People You&apos;re Holding Accountable
         </h2>
 
@@ -565,13 +262,13 @@ export default async function PeersPage() {
         {
           receivedInvitations.length === 0
             ? (
-              <p>
+              <p className="app-card-muted text-sm text-slate-500 dark:text-slate-400">
                 No accountability
                 invitations yet.
               </p>
             )
             : (
-              <div>
+              <div className="grid gap-3">
 
                 {
                   receivedInvitations.map(
@@ -581,22 +278,10 @@ export default async function PeersPage() {
                         key={
                           relationship.id
                         }
-                        style={{
-                          border:
-                            "1px solid #ccc",
-
-                          borderRadius:
-                            "8px",
-
-                          padding:
-                            "16px",
-
-                          marginBottom:
-                            "10px"
-                        }}
+                        className="app-card"
                       >
 
-                        <strong>
+                        <strong className="text-slate-950 dark:text-white">
                           {
                             relationship
                               .owner
@@ -605,7 +290,7 @@ export default async function PeersPage() {
                         </strong>
 
 
-                        <p>
+                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                           Status:{" "}
 
                           <strong>
@@ -645,25 +330,7 @@ export default async function PeersPage() {
                               href={
                                 `/peers/view/${relationship.ownerId}`
                               }
-                              style={{
-                                display:
-                                  "inline-block",
-
-                                padding:
-                                  "10px 14px",
-
-                                border:
-                                  "1px solid #333",
-
-                                borderRadius:
-                                  "6px",
-
-                                textDecoration:
-                                  "none",
-
-                                marginTop:
-                                  "5px"
-                              }}
+                              className="app-button-primary mt-3 inline-flex no-underline"
                             >
                               View Accountability
                             </Link>
@@ -679,7 +346,7 @@ export default async function PeersPage() {
                               "revoked"
                           ) && (
 
-                            <p>
+                            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                               This accountability
                               relationship was removed.
                             </p>
@@ -694,7 +361,7 @@ export default async function PeersPage() {
                           relationship.status ===
                             "rejected" && (
 
-                            <p>
+                            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                               You rejected this
                               invitation.
                             </p>
@@ -711,6 +378,254 @@ export default async function PeersPage() {
               </div>
             )
         }
+
+      </section>
+
+
+      {/* PEOPLE HOLDING ME ACCOUNTABLE */}
+
+      <section className="space-y-4">
+
+        <h2 className="app-section-title">
+          My Accountability Peers
+        </h2>
+
+
+        {
+          sentInvitations.length === 0
+            ? (
+              <p className="app-card-muted text-sm text-slate-500 dark:text-slate-400">
+                You haven&apos;t invited
+                anyone yet.
+              </p>
+            )
+            : (
+              <div className="grid gap-3">
+
+                {
+                  sentInvitations.map(
+                    (relationship) => {
+                      const latestDelivery =
+                        latestDeliveryByPeerId.get(
+                          relationship.peerId
+                        );
+
+                      const latestResponse =
+                        latestDelivery
+                          ?.report
+                          .responses
+                          .find(
+                            (response) =>
+                              response.peerId ===
+                              relationship.peerId
+                          );
+
+                      return (
+
+                      <div
+                        key={
+                          relationship.id
+                        }
+                        className="app-card"
+                      >
+
+                        <strong className="text-slate-950 dark:text-white">
+                          {
+                            relationship
+                              .peer
+                              .email
+                          }
+                        </strong>
+
+
+                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                          Status:{" "}
+
+                          <strong>
+                            {
+                              relationship
+                                .status
+                            }
+                          </strong>
+                        </p>
+
+
+                        {
+                          relationship.status ===
+                            "pending" && (
+
+                            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                              Waiting for this person
+                              to accept your invitation.
+                            </p>
+
+                          )
+                        }
+
+
+                        {
+                          relationship.status ===
+                            "accepted" &&
+                          relationship.revokedAt ===
+                            null && (
+
+                            <>
+                              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                                This person is holding
+                                you accountable.
+                              </p>
+
+
+                              <div className="mt-4 border-t border-slate-200 pt-4 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                                <p>
+                                  <strong>
+                                    Latest report:
+                                  </strong>{" "}
+
+                                  {
+                                    latestDelivery
+                                      ? formatReportDate(
+                                          latestDelivery
+                                            .report
+                                            .reportDate
+                                        )
+                                      : "No completed report delivered yet"
+                                  }
+                                </p>
+
+
+                                {
+                                  latestDelivery && (
+                                    <>
+                                      <p className="mt-2">
+                                        <strong>
+                                          Delivered:
+                                        </strong>{" "}
+
+                                        {
+                                          formatDateTime(
+                                            latestDelivery.createdAt,
+                                            profile.timezone
+                                          )
+                                        }
+                                      </p>
+
+
+                                      <p className="mt-2">
+                                        <strong>
+                                          Viewed:
+                                        </strong>{" "}
+
+                                        {
+                                          latestDelivery.viewedAt
+                                            ? formatDateTime(
+                                                latestDelivery.viewedAt,
+                                                profile.timezone
+                                              )
+                                            : "Not viewed yet"
+                                        }
+                                      </p>
+
+
+                                      <p className="mt-2">
+                                        <strong>
+                                          Response:
+                                        </strong>{" "}
+
+                                        {
+                                          latestResponse
+                                            ? `Received ${formatDateTime(
+                                                latestResponse.updatedAt,
+                                                profile.timezone
+                                              )}`
+                                            : "No response yet"
+                                        }
+                                      </p>
+
+
+                                      <p className="mt-2">
+                                        <Link href="/reports">
+                                          View report history
+                                        </Link>
+                                      </p>
+                                    </>
+                                  )
+                                }
+                              </div>
+
+
+                              <RemovePeerButton
+                                relationshipId={
+                                  relationship.id
+                                }
+
+                                peerEmail={
+                                  relationship
+                                    .peer
+                                    .email
+                                }
+                              />
+                            </>
+
+                          )
+                        }
+
+
+                        {
+                          relationship.status ===
+                            "rejected" && (
+
+                            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                              This invitation was
+                              rejected.
+                            </p>
+
+                          )
+                        }
+
+
+                        {
+                          (
+                            relationship.revokedAt ||
+                            relationship.status ===
+                              "revoked"
+                          ) && (
+
+                            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                              Access revoked. This peer
+                              can no longer view your
+                              accountability reports.
+                            </p>
+
+                          )
+                        }
+
+                      </div>
+
+                      );
+                    }
+                  )
+                }
+
+              </div>
+            )
+        }
+
+      </section>
+
+
+      {/* INVITE PEER */}
+
+      <section className="app-card">
+
+        <h2 className="app-section-title">
+          Invite a Peer
+        </h2>
+
+
+        <div className="mt-4">
+          <PeerInviteForm />
+        </div>
 
       </section>
 

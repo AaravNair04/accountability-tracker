@@ -200,19 +200,14 @@ export default function DataRetentionSettings({
 
 
   return (
-    <section
-      style={{
-        marginTop:
-          "32px"
-      }}
-    >
+    <section className="app-card">
 
-      <h2>
+      <h2 className="app-section-title">
         Data retention
       </h2>
 
 
-      <p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         Automatically delete old raw usage sessions
         and device tracking events. Daily reports are
         kept so your accountability history remains
@@ -229,16 +224,7 @@ export default function DataRetentionSettings({
               event.target.value
             )
         }
-        style={{
-          width:
-            "100%",
-
-          padding:
-            "10px 12px",
-
-          marginBottom:
-            "12px"
-        }}
+        className="mt-5 w-full rounded-lg border px-4 py-3"
       >
         {
           OPTIONS.map(
@@ -263,17 +249,7 @@ export default function DataRetentionSettings({
             savedValue
         }
         onClick={saveRetentionPolicy}
-        style={{
-          padding:
-            "10px 16px",
-
-          cursor:
-            loading ||
-            selectedValue ===
-              savedValue
-              ? "not-allowed"
-              : "pointer"
-        }}
+        className="app-button-primary mt-4"
       >
         {
           loading
@@ -285,12 +261,7 @@ export default function DataRetentionSettings({
 
       {
         message && (
-          <p
-            style={{
-              marginTop:
-                "10px"
-            }}
-          >
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
             {message}
           </p>
         )

@@ -1,73 +1,37 @@
 export default function DataExportSettings() {
-  const linkStyle = {
-    display:
-      "inline-block",
-
-    padding:
-      "10px 14px",
-
-    border:
-      "1px solid #333",
-
-    borderRadius:
-      "6px",
-
-    textDecoration:
-      "none",
-
-    color:
-      "inherit"
-  };
-
   return (
-    <section
-      style={{
-        marginTop:
-          "32px"
-      }}
-    >
+    <section className="app-card">
 
-      <h2>
+      <h2 className="app-section-title">
         Data export
       </h2>
 
 
-      <p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         Download your usage sessions, reports,
         devices, tracked sites, and accountability
         records.
       </p>
 
 
-      <div
-        style={{
-          display:
-            "flex",
-
-          flexWrap:
-            "wrap",
-
-          gap:
-            "10px"
-        }}
-      >
+      <div className="mt-5 flex flex-wrap gap-3">
         <a
           href="/api/export?format=json"
-          style={linkStyle}
+          className="app-button-secondary no-underline"
         >
           Download full JSON
         </a>
 
         <a
           href="/api/export?format=csv&dataset=usage-sessions"
-          style={linkStyle}
+          className="app-button-secondary no-underline"
         >
           Usage sessions CSV
         </a>
 
         <a
           href="/api/export?format=csv&dataset=daily-reports"
-          style={linkStyle}
+          className="app-button-secondary no-underline"
         >
           Daily reports CSV
         </a>

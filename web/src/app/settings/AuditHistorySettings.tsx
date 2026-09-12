@@ -103,19 +103,14 @@ export default function AuditHistorySettings({
   timeZone
 }: Props) {
   return (
-    <section
-      style={{
-        marginTop:
-          "32px"
-      }}
-    >
+    <section className="app-card">
 
-      <h2>
+      <h2 className="app-section-title">
         Audit history
       </h2>
 
 
-      <p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         Recent account, sharing, device, and privacy
         changes.
       </p>
@@ -125,24 +120,13 @@ export default function AuditHistorySettings({
         events.length ===
           0
           ? (
-            <p>
+            <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
               No audit events yet.
             </p>
           )
           : (
             <ul
-              style={{
-                listStyle:
-                  "none",
-                padding:
-                  0,
-                margin:
-                  0,
-                display:
-                  "grid",
-                gap:
-                  "10px"
-              }}
+              className="mt-5 grid gap-3"
             >
               {
                 events.map(
@@ -155,16 +139,9 @@ export default function AuditHistorySettings({
                     return (
                       <li
                         key={event.id}
-                        style={{
-                          border:
-                            "1px solid #ddd",
-                          borderRadius:
-                            "8px",
-                          padding:
-                            "12px"
-                        }}
+                        className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
                       >
-                        <strong>
+                        <strong className="text-slate-950 dark:text-white">
                           {
                             formatAction(
                               event.action
@@ -172,16 +149,7 @@ export default function AuditHistorySettings({
                           }
                         </strong>
 
-                        <div
-                          style={{
-                            color:
-                              "#666",
-                            fontSize:
-                              "14px",
-                            marginTop:
-                              "4px"
-                          }}
-                        >
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                           {
                             formatDateTime(
                               event.createdAt,
@@ -193,16 +161,7 @@ export default function AuditHistorySettings({
 
                         {
                           metadata && (
-                            <div
-                              style={{
-                                color:
-                                  "#666",
-                                fontSize:
-                                  "14px",
-                                marginTop:
-                                  "4px"
-                              }}
-                            >
+                            <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                               {metadata}
                             </div>
                           )

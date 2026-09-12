@@ -188,29 +188,30 @@ export default function TimezoneSettings({
 
 
   return (
-    <section>
+    <section className="app-card">
 
-      <h2>
+      <h2 className="app-section-title">
         Timezone
       </h2>
 
 
-      <p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         Your reports use your timezone to
         determine when each day starts and ends.
       </p>
 
 
-      <p>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-950/40">
         <strong>
           Saved timezone:
         </strong>{" "}
 
         {savedTimezone}
-      </p>
+        </p>
 
 
-      <p>
+        <p className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-950/40">
         <strong>
           Browser timezone:
         </strong>{" "}
@@ -219,7 +220,8 @@ export default function TimezoneSettings({
           detectedTimezone ||
           "Detecting..."
         }
-      </p>
+        </p>
+      </div>
 
 
       {
@@ -232,13 +234,7 @@ export default function TimezoneSettings({
               type="button"
               disabled={loading}
               onClick={saveTimezone}
-              style={{
-                padding: "10px 16px",
-                cursor:
-                  loading
-                    ? "not-allowed"
-                    : "pointer"
-              }}
+              className="app-button-primary mt-4"
             >
 
               {
@@ -253,8 +249,8 @@ export default function TimezoneSettings({
           : detectedTimezone
             ? (
 
-              <p>
-                ✓ Your saved timezone matches
+              <p className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
+                Your saved timezone matches
                 this browser.
               </p>
 
@@ -266,11 +262,7 @@ export default function TimezoneSettings({
       {
         message && (
 
-          <p
-            style={{
-              marginTop: "10px"
-            }}
-          >
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
             {message}
           </p>
 

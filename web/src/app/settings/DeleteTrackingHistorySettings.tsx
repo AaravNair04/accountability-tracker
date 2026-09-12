@@ -121,25 +121,14 @@ export default function DeleteTrackingHistorySettings() {
 
 
   return (
-    <section
-      style={{
-        marginTop:
-          "32px",
+    <section className="rounded-lg border border-red-100 bg-red-50/60 p-5 shadow-sm dark:border-red-500/20 dark:bg-red-500/10">
 
-        borderTop:
-          "1px solid #ddd",
-
-        paddingTop:
-          "24px"
-      }}
-    >
-
-      <h2>
+      <h2 className="text-xl font-semibold tracking-normal text-red-900 dark:text-red-100">
         Delete tracking history
       </h2>
 
 
-      <p>
+      <p className="mt-2 text-sm text-red-800/80 dark:text-red-100/80">
         Permanently delete your usage sessions,
         daily reports, report delivery/view status,
         peer responses on those reports, and device
@@ -149,13 +138,7 @@ export default function DeleteTrackingHistorySettings() {
 
 
       <label
-        style={{
-          display:
-            "block",
-
-          marginBottom:
-            "10px"
-        }}
+        className="mt-5 block text-sm font-semibold text-red-900 dark:text-red-100"
       >
         Type DELETE to confirm
       </label>
@@ -171,19 +154,7 @@ export default function DeleteTrackingHistorySettings() {
               event.target.value
             )
         }
-        style={{
-          width:
-            "100%",
-
-          boxSizing:
-            "border-box",
-
-          padding:
-            "10px 12px",
-
-          marginBottom:
-            "12px"
-        }}
+        className="mt-2 w-full rounded-lg border px-4 py-3"
       />
 
 
@@ -195,29 +166,7 @@ export default function DeleteTrackingHistorySettings() {
             CONFIRMATION_TEXT
         }
         onClick={deleteTrackingHistory}
-        style={{
-          padding:
-            "10px 16px",
-
-          border:
-            "1px solid #8a1f1f",
-
-          borderRadius:
-            "6px",
-
-          color:
-            "#8a1f1f",
-
-          background:
-            "#fff",
-
-          cursor:
-            loading ||
-            confirmation !==
-              CONFIRMATION_TEXT
-              ? "not-allowed"
-              : "pointer"
-        }}
+        className="app-button-danger mt-4"
       >
         {
           loading
@@ -229,12 +178,7 @@ export default function DeleteTrackingHistorySettings() {
 
       {
         message && (
-          <p
-            style={{
-              marginTop:
-                "10px"
-            }}
-          >
+          <p className="mt-4 text-sm text-red-800 dark:text-red-100">
             {message}
           </p>
         )

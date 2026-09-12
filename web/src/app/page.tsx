@@ -28,10 +28,6 @@ import {
   groupContinuousUsageSessions
 } from "@/lib/usage/activitySegments";
 
-import GenerateReportButton from "./GenerateReportButton";
-import NewPeerResponsesLink from "./NewPeerResponsesLink";
-
-
 function formatDuration(
   seconds: number
 ) {
@@ -499,21 +495,15 @@ export default async function Home() {
             </p>
 
             <p>
-              <Link href="/peers/preview">
-                Preview Peer View
+              <Link href="/tracked-sites">
+                Tracked Websites
               </Link>
             </p>
-
-            <NewPeerResponsesLink
-              userId={
-                user.id
-              }
-            />
           </div>
 
           <div className="app-card">
             <h3 className="font-semibold text-slate-950 dark:text-white">
-              Accountability for Others
+              My Peers
             </h3>
 
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -535,46 +525,10 @@ export default async function Home() {
 
             <p>
               <Link href="/peers">
-                Trusted Peers
+                Add and View Peers
               </Link>
             </p>
           </div>
-        </div>
-      </section>
-
-
-      {/* REPORT PREVIEW */}
-
-      <section className="app-card border-indigo-100 bg-indigo-50/60 dark:border-indigo-500/20 dark:bg-indigo-500/10">
-        <h2 className="app-section-title">
-          Daily Report
-        </h2>
-
-        <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-          Generate today&apos;s preview report for testing.
-          Today&apos;s incomplete report is not delivered
-          to accountability peers.
-        </p>
-
-        <GenerateReportButton />
-      </section>
-
-
-      {/* SETTINGS */}
-
-      <section className="app-card">
-        <h2 className="app-section-title">
-          Settings
-        </h2>
-
-        <div className="mt-3 flex flex-wrap gap-4 text-sm">
-          <Link href="/devices">
-            Devices
-          </Link>
-
-          <Link href="/settings">
-            Timezone & Settings
-          </Link>
         </div>
       </section>
 
