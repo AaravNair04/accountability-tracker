@@ -6,6 +6,7 @@ import {
 } from "next/navigation";
 
 import ThemeToggle from "./ThemeToggle";
+import ProfileMenu from "./ProfileMenu";
 
 
 const navigationItems = [
@@ -99,8 +100,14 @@ export default function AppChrome({
               Accountability Tracker
             </Link>
 
-            <div className="lg:hidden">
+            <div className="flex items-center gap-2 lg:hidden">
               <ThemeToggle />
+
+              {
+                !isAuthRoute && (
+                  <ProfileMenu />
+                )
+              }
             </div>
           </div>
 
@@ -149,8 +156,14 @@ export default function AppChrome({
             )
           }
 
-          <div className="hidden lg:block">
+          <div className="hidden items-center gap-2 lg:flex">
             <ThemeToggle />
+
+            {
+              !isAuthRoute && (
+                <ProfileMenu />
+              )
+            }
           </div>
         </div>
       </header>
