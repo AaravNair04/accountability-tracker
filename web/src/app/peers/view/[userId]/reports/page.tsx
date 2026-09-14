@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
 import {
   SiteUsageBreakdown,
   TrackingIntegrityBreakdown,
@@ -103,21 +105,13 @@ export default async function PeerReportsPage({
 
     return (
       <main className="app-page-narrow space-y-6">
-
-        <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-          Access Denied
-        </h1>
-
-
-        <p>
-          You are not an accepted
-          accountability peer for this user.
-        </p>
-
-
-        <Link href="/peers">
-          ← Back to Trusted Peers
-        </Link>
+        <PageHeader
+          backHref="/peers"
+          backLabel="← Back to Trusted Peers"
+          eyebrow="Peer Reports"
+          title="Access Denied"
+          description="You are not an accepted accountability peer for this user."
+        />
 
       </main>
     );
@@ -155,36 +149,24 @@ export default async function PeerReportsPage({
 
   return (
     <main className="app-page-narrow space-y-6">
-
-      <Link
-        href={
-          `/peers/view/${userId}`
-        }
-      >
-        ← Back to Peer Overview
-      </Link>
-
-
-      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-        Accountability Reports
-      </h1>
-
-
-      <p>
-        Reports for{" "}
-        <strong>
-          {relationship.owner.email}
-        </strong>
-      </p>
+      <PageHeader
+        backHref={`/peers/view/${userId}`}
+        backLabel="← Back to Peer Overview"
+        eyebrow="Peer Reports"
+        title="Accountability Reports"
+        description={`Reports for ${relationship.owner.email}.`}
+      />
 
 
       {
         reports.length === 0
           ? (
-
-            <p>
-              No reports have been delivered to you yet.
-            </p>
+            <EmptyState
+              title="No reports delivered yet"
+              description="When this person has a delivered daily report, it will appear here."
+              actionHref="/inbox"
+              actionLabel="Go to Inbox"
+            />
 
           )
           : (
@@ -209,120 +191,116 @@ export default async function PeerReportsPage({
                 return (
                   <section
                     key={report.id}
-                    style={{
-                      border:
-                        "1px solid #ddd",
-                      borderRadius:
-                        "10px",
-                      padding:
-                        "20px",
-                      marginTop:
-                        "20px"
-                    }}
+                    className="app-card"
                   >
 
-                    <h2>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+                          Accountability report
+                        </p>
+
+                        <h2 className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">
                       {
                         formatReportDate(
                           report.reportDate
                         )
                       }
-                    </h2>
+                        </h2>
 
-
-                    <p>
-                      Timezone:{" "}
-                      <strong>
-                        {report.timezone}
-                      </strong>
-                    </p>
-
-
-                    <h3>
-                      Usage
-                    </h3>
-
-
-                    <p>
-                      Total tracked usage:{" "}
-                          <strong>
-                            {
-                              formatReportDuration(
-                                report.totalSeconds
-                              )
-                            }
-                      </strong>
-                    </p>
-
-
-                    <p>
-                      Active usage:{" "}
-                      {
-                        formatReportDuration(
-                          report.activeSeconds
-                        )
-                      }
-                    </p>
-
-
-                    <p>
-                      Background audio:{" "}
-                      {
-                        formatReportDuration(
-                          report.backgroundAudioSeconds
-                        )
-                      }
-                    </p>
-
-
-                    <h3>
-                      Site Breakdown
-                    </h3>
-
-
-                    <SiteUsageBreakdown
-                      siteUsage={
-                        siteUsage
-                      }
-                    />
-
-
-                    <h3>
-                      Tracking Integrity
-                    </h3>
-
-
-                    <TrackingIntegrityBreakdown
-                      goodSeconds={
-                        report.goodSeconds
-                      }
-                      limitedSeconds={
-                        report.limitedSeconds
-                      }
-                      pausedSeconds={
-                        report.pausedSeconds
-                      }
-                      unknownSeconds={
-                        report.unknownSeconds
-                      }
-                    />
-
-
-                    <div
-                      style={{
-                        marginTop:
-                          "20px"
-                      }}
-                    >
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                          Timezone:{" "}
+                          <strong className="font-semibold text-slate-700 dark:text-slate-200">
+                            {report.timezone}
+                          </strong>
+                        </p>
+                      </div>
 
                       <Link
                         href={
                           `/peers/view/${userId}/reports/${report.id}`
                         }
+                        className="app-button-primary inline-flex justify-center no-underline"
                       >
-                        View Full Report →
+                        View Full Report
                       </Link>
+                    </div>
 
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                          Total
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+                            {
+                              formatReportDuration(
+                                report.totalSeconds
+                              )
+                            }
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                        <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-200">
+                          Active
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-emerald-800 dark:text-emerald-100">
+                      {
+                        formatReportDuration(
+                          report.activeSeconds
+                        )
+                      }
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
+                        <p className="text-sm font-semibold text-amber-700 dark:text-amber-200">
+                          Background audio
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-amber-800 dark:text-amber-100">
+                      {
+                        formatReportDuration(
+                          report.backgroundAudioSeconds
+                        )
+                      }
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                      <section>
+                        <h3 className="mb-3 font-semibold text-slate-950 dark:text-white">
+                          Site breakdown
+                        </h3>
+
+                        <SiteUsageBreakdown
+                          siteUsage={siteUsage}
+                        />
+                      </section>
+
+                      <section>
+                        <h3 className="mb-3 font-semibold text-slate-950 dark:text-white">
+                          Tracking coverage
+                        </h3>
+
+                        <TrackingIntegrityBreakdown
+                          goodSeconds={
+                            report.goodSeconds
+                          }
+                          limitedSeconds={
+                            report.limitedSeconds
+                          }
+                          pausedSeconds={
+                            report.pausedSeconds
+                          }
+                          unknownSeconds={
+                            report.unknownSeconds
+                          }
+                        />
+                      </section>
                     </div>
 
                   </section>

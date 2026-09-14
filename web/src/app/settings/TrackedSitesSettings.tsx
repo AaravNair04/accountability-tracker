@@ -4,6 +4,10 @@ import {
   useState
 } from "react";
 
+import EmptyState from "@/components/EmptyState";
+import {
+  showToast
+} from "@/components/ToastViewport";
 
 type TrackedSite = {
   id: string;
@@ -58,6 +62,11 @@ export default function TrackedSitesSettings({
         "Enter a hostname first."
       );
 
+      showToast(
+        "Enter a hostname first.",
+        "error"
+      );
+
       return;
     }
 
@@ -105,6 +114,12 @@ export default function TrackedSitesSettings({
           "Could not add tracked site."
         );
 
+        showToast(
+          data.error ??
+          "Could not add tracked site.",
+          "error"
+        );
+
         return;
       }
 
@@ -135,6 +150,10 @@ export default function TrackedSitesSettings({
         `${data.trackedSite.hostname} is now tracked.`
       );
 
+      showToast(
+        `${data.trackedSite.hostname} is now tracked.`
+      );
+
     } catch (error) {
       console.error(
         "Tracked site add failed:",
@@ -143,6 +162,11 @@ export default function TrackedSitesSettings({
 
       setMessage(
         "Could not add tracked site."
+      );
+
+      showToast(
+        "Could not add tracked site.",
+        "error"
       );
 
     } finally {
@@ -197,6 +221,12 @@ export default function TrackedSitesSettings({
           "Could not remove tracked site."
         );
 
+        showToast(
+          data.error ??
+          "Could not remove tracked site.",
+          "error"
+        );
+
         return;
       }
 
@@ -213,6 +243,10 @@ export default function TrackedSitesSettings({
         "Tracked site removed."
       );
 
+      showToast(
+        "Tracked site removed."
+      );
+
     } catch (error) {
       console.error(
         "Tracked site removal failed:",
@@ -221,6 +255,11 @@ export default function TrackedSitesSettings({
 
       setMessage(
         "Could not remove tracked site."
+      );
+
+      showToast(
+        "Could not remove tracked site.",
+        "error"
       );
 
     } finally {
@@ -314,9 +353,12 @@ export default function TrackedSitesSettings({
             </ul>
           )
           : (
-            <p className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
-              No websites are currently tracked.
-            </p>
+            <div className="mt-5">
+              <EmptyState
+                title="No websites are tracked yet"
+                description="Add YouTube, Instagram, Netflix, Twitch, or any hostname you want the extension to watch."
+              />
+            </div>
           )
       }
 

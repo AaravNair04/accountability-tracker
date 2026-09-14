@@ -5,6 +5,9 @@ import {
   useState
 } from "react";
 
+import {
+  showToast
+} from "@/components/ToastViewport";
 
 type Props = {
   currentTimezone: string;
@@ -138,6 +141,11 @@ export default function TimezoneSettings({
           `Server error (${response.status}).`
         );
 
+        showToast(
+          `Server error (${response.status}).`,
+          "error"
+        );
+
         return;
 
       }
@@ -148,6 +156,12 @@ export default function TimezoneSettings({
         setMessage(
           data.error ??
           "Could not update timezone."
+        );
+
+        showToast(
+          data.error ??
+          "Could not update timezone.",
+          "error"
         );
 
         return;
@@ -165,6 +179,10 @@ export default function TimezoneSettings({
         "Timezone updated successfully."
       );
 
+      showToast(
+        "Timezone updated successfully."
+      );
+
 
     } catch (error) {
 
@@ -176,6 +194,11 @@ export default function TimezoneSettings({
 
       setMessage(
         "Could not update timezone."
+      );
+
+      showToast(
+        "Could not update timezone.",
+        "error"
       );
 
     } finally {

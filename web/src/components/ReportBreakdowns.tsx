@@ -143,14 +143,14 @@ export function SiteUsageBreakdown({
     sites.length === 0
   ) {
     return (
-      <p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         No tracked site usage.
       </p>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-3">
       {
         sites.map(
           ({
@@ -161,28 +161,15 @@ export function SiteUsageBreakdown({
               key={
                 site
               }
-              style={{
-                marginBottom:
-                  "12px"
-              }}
             >
               <div
-                style={{
-                  display:
-                    "flex",
-
-                  justifyContent:
-                    "space-between",
-
-                  gap:
-                    "16px"
-                }}
+                className="flex items-center justify-between gap-4 text-sm"
               >
-                <strong>
+                <strong className="text-slate-700 dark:text-slate-200">
                   {site}
                 </strong>
 
-                <span>
+                <span className="text-slate-500 dark:text-slate-400">
                   {
                     formatReportDuration(
                       seconds
@@ -200,36 +187,16 @@ export function SiteUsageBreakdown({
               </div>
 
               <div
-                style={{
-                  height:
-                    "8px",
-
-                  marginTop:
-                    "6px",
-
-                  background:
-                    "#eee",
-
-                  borderRadius:
-                    "999px",
-
-                  overflow:
-                    "hidden"
-                }}
+                className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
               >
                 <div
+                  className="h-full rounded-full bg-indigo-600 dark:bg-indigo-400"
                   style={{
                     width:
                       getBarWidth(
                         seconds,
                         totalSeconds
-                      ),
-
-                    height:
-                      "100%",
-
-                    background:
-                      "#333"
+                      )
                   }}
                 />
               </div>
@@ -262,8 +229,8 @@ export function TrackingIntegrityBreakdown({
       seconds:
         goodSeconds,
 
-      color:
-        "#237a3b"
+      className:
+        "bg-emerald-500"
     },
     {
       label:
@@ -272,8 +239,8 @@ export function TrackingIntegrityBreakdown({
       seconds:
         limitedSeconds,
 
-      color:
-        "#8a6d00"
+      className:
+        "bg-amber-500"
     },
     {
       label:
@@ -282,8 +249,8 @@ export function TrackingIntegrityBreakdown({
       seconds:
         pausedSeconds,
 
-      color:
-        "#666"
+      className:
+        "bg-slate-400"
     },
     {
       label:
@@ -292,13 +259,13 @@ export function TrackingIntegrityBreakdown({
       seconds:
         unknownSeconds,
 
-      color:
-        "#b00020"
+      className:
+        "bg-red-500"
     }
   ];
 
   return (
-    <div>
+    <div className="space-y-3">
       {
         rows.map(
           (row) => (
@@ -306,28 +273,15 @@ export function TrackingIntegrityBreakdown({
               key={
                 row.label
               }
-              style={{
-                marginBottom:
-                  "12px"
-              }}
             >
               <div
-                style={{
-                  display:
-                    "flex",
-
-                  justifyContent:
-                    "space-between",
-
-                  gap:
-                    "16px"
-                }}
+                className="flex items-center justify-between gap-4 text-sm"
               >
-                <strong>
+                <strong className="text-slate-700 dark:text-slate-200">
                   {row.label}
                 </strong>
 
-                <span>
+                <span className="text-slate-500 dark:text-slate-400">
                   {
                     formatReportDuration(
                       row.seconds
@@ -345,36 +299,23 @@ export function TrackingIntegrityBreakdown({
               </div>
 
               <div
-                style={{
-                  height:
-                    "8px",
-
-                  marginTop:
-                    "6px",
-
-                  background:
-                    "#eee",
-
-                  borderRadius:
-                    "999px",
-
-                  overflow:
-                    "hidden"
-                }}
+                className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
               >
                 <div
+                  className={
+                    [
+                      "h-full rounded-full",
+                      row.className
+                    ].join(
+                      " "
+                    )
+                  }
                   style={{
                     width:
                       getBarWidth(
                         row.seconds,
                         totalSeconds
-                      ),
-
-                    height:
-                      "100%",
-
-                    background:
-                      row.color
+                      )
                   }}
                 />
               </div>

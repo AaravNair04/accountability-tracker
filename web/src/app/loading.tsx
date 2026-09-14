@@ -25,11 +25,11 @@ export default function Loading() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {
           Array.from({
             length:
-              4
+              5
           }).map(
             (
               _,
@@ -47,6 +47,35 @@ export default function Loading() {
             )
           )
         }
+      </section>
+
+      <section className="app-card animate-pulse">
+        <div className="h-5 w-36 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="mt-5 space-y-4">
+          {
+            Array.from({
+              length:
+                3
+            }).map(
+              (
+                _,
+                index
+              ) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 rounded-lg border border-slate-200 p-4 dark:border-slate-800"
+                >
+                  <div className="h-3 w-3 rounded-full bg-indigo-200 dark:bg-indigo-900" />
+                  <div className="min-w-0 flex-1">
+                    <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+                    <div className="mt-2 h-3 w-2/3 rounded bg-slate-100 dark:bg-slate-800/80" />
+                  </div>
+                  <div className="h-7 w-20 rounded bg-slate-200 dark:bg-slate-800" />
+                </div>
+              )
+            )
+          }
+        </div>
       </section>
     </main>
   );

@@ -4,6 +4,9 @@ import {
   useState
 } from "react";
 
+import {
+  showToast
+} from "@/components/ToastViewport";
 
 const CONFIRMATION_TEXT =
   "DELETE";
@@ -47,6 +50,11 @@ export default function DeleteTrackingHistorySettings() {
         `Type ${CONFIRMATION_TEXT} to confirm.`
       );
 
+      showToast(
+        `Type ${CONFIRMATION_TEXT} to confirm.`,
+        "error"
+      );
+
       return;
     }
 
@@ -82,6 +90,12 @@ export default function DeleteTrackingHistorySettings() {
           "Could not delete tracking history."
         );
 
+        showToast(
+          data.error ??
+          "Could not delete tracking history.",
+          "error"
+        );
+
         return;
       }
 
@@ -92,14 +106,21 @@ export default function DeleteTrackingHistorySettings() {
         ""
       );
 
-      setMessage(
+      const successMessage =
         [
           `Deleted ${deleted.usageSessions ?? 0} usage sessions`,
           `${deleted.dailyReports ?? 0} reports`,
           `${deleted.trackingEvents ?? 0} device events`
         ].join(
           ", "
-        ) + "."
+        ) + ".";
+
+      setMessage(
+        successMessage
+      );
+
+      showToast(
+        successMessage
       );
 
     } catch (error) {
@@ -110,6 +131,11 @@ export default function DeleteTrackingHistorySettings() {
 
       setMessage(
         "Could not delete tracking history."
+      );
+
+      showToast(
+        "Could not delete tracking history.",
+        "error"
       );
 
     } finally {

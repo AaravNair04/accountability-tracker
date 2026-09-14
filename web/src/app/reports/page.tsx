@@ -1,432 +1,425 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import {
+  redirect
+} from "next/navigation";
 
+import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
 import {
   SiteUsageBreakdown,
   TrackingIntegrityBreakdown,
   formatReportDuration
 } from "@/components/ReportBreakdowns";
-import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
-
-
-// --------------------------------------------------
-// FORMAT REPORT DATE
-// --------------------------------------------------
+import {
+  prisma
+} from "@/lib/prisma";
+import {
+  createClient
+} from "@/lib/supabase/server";
 
 function formatDate(
   date: Date
 ) {
-
   return date.toLocaleDateString(
     "en-US",
     {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      timeZone: "UTC"
+      year:
+        "numeric",
+      month:
+        "long",
+      day:
+        "numeric",
+      timeZone:
+        "UTC"
     }
   );
-
 }
 
+function formatDateTime(
+  date: Date
+) {
+  return date.toLocaleString(
+    "en-US",
+    {
+      dateStyle:
+        "medium",
+      timeStyle:
+        "short"
+    }
+  );
+}
 
-// --------------------------------------------------
-// PAGE
-// --------------------------------------------------
+function parseSiteUsage(
+  siteUsage: unknown
+) {
+  return siteUsage &&
+    typeof siteUsage ===
+      "object" &&
+    !Array.isArray(
+      siteUsage
+    )
+    ? siteUsage as Record<string, unknown>
+    : {};
+}
+
+function getTopSites(
+  siteUsage: Record<string, unknown>
+) {
+  return Object.entries(
+    siteUsage
+  )
+    .filter(
+      (entry) =>
+        typeof entry[1] ===
+          "number" &&
+        entry[1] > 0
+    )
+    .map(
+      ([
+        site,
+        seconds
+      ]) => ({
+        site,
+        seconds:
+          seconds as number
+      })
+    )
+    .sort(
+      (
+        first,
+        second
+      ) =>
+        second.seconds -
+        first.seconds
+    )
+    .slice(
+      0,
+      3
+    );
+}
 
 export default async function ReportsPage() {
-
-  // --------------------------------------------------
-  // AUTHENTICATE USER
-  // --------------------------------------------------
-
   const supabase =
     await createClient();
 
-
   const {
-    data: { user }
+    data: {
+      user
+    }
   } =
     await supabase.auth.getUser();
 
-
-  if (!user) {
-    redirect("/auth");
+  if (
+    !user
+  ) {
+    redirect(
+      "/auth"
+    );
   }
-
-
-  // --------------------------------------------------
-  // LOAD USER REPORTS + PEER RESPONSES
-  // --------------------------------------------------
 
   const reports =
     await prisma.dailyReport.findMany({
-
       where: {
         userId:
           user.id
       },
 
       include: {
-
         responses: {
-
           include: {
-
             peer: {
               select: {
-                id: true,
-                email: true
+                id:
+                  true,
+                email:
+                  true
               }
             }
-
           },
 
           orderBy: {
             updatedAt:
               "desc"
           }
-
         }
-
       },
 
       orderBy: {
         reportDate:
           "desc"
       }
-
     });
 
-    await prisma.reportResponse.updateMany({
-      where: {
-        ownerViewedAt: null,
+  await prisma.reportResponse.updateMany({
+    where: {
+      ownerViewedAt:
+        null,
 
-        report: {
-          userId: user.id
-        }
-      },
-
-      data: {
-        ownerViewedAt: new Date()
+      report: {
+        userId:
+          user.id
       }
-    });
+    },
 
-
-  // --------------------------------------------------
-  // PAGE
-  // --------------------------------------------------
+    data: {
+      ownerViewedAt:
+        new Date()
+    }
+  });
 
   return (
     <main className="app-page-narrow space-y-6">
-
-      <Link href="/">
-        ← Back to Dashboard
-      </Link>
-
-
-      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-        Daily Reports
-      </h1>
-
-
-      <p>
-        Your historical accountability reports.
-      </p>
-
-
-      <hr
-        style={{
-          margin: "30px 0"
-        }}
+      <PageHeader
+        backHref="/"
+        backLabel="← Back to Dashboard"
+        eyebrow="Reports"
+        title="Daily Reports"
+        description="Review your historical accountability reports, peer responses, and tracking coverage in one place."
       />
 
-
       {
-        reports.length === 0
+        reports.length ===
+          0
           ? (
-
-            <p>
-              No daily reports have been generated yet.
-            </p>
-
+            <EmptyState
+              title="No daily reports yet"
+              description="Your first report will appear here after tracking data is collected and a daily report is generated."
+              actionHref="/tracked-sites"
+              actionLabel="Check tracked websites"
+            />
           )
           : (
-
-            <div>
-
+            <div className="space-y-5">
               {
                 reports.map(
                   (report) => {
-
-                    // --------------------------------------------------
-                    // SITE USAGE
-                    // --------------------------------------------------
-
                     const siteUsage =
-                      report.siteUsage &&
-                      typeof report.siteUsage ===
-                        "object" &&
-                      !Array.isArray(
+                      parseSiteUsage(
                         report.siteUsage
-                      )
-                        ? report.siteUsage as Record<
-                            string,
-                            unknown
-                          >
-                        : {};
+                      );
 
+                    const topSites =
+                      getTopSites(
+                        siteUsage
+                      );
 
                     return (
-
                       <article
                         id={
                           `report-${report.id}`
                         }
-                        key={
-                          report.id
-                        }
-
-                        style={{
-                          border:
-                            "1px solid #ccc",
-
-                          borderRadius:
-                            "10px",
-
-                          padding:
-                            "20px",
-
-                          marginBottom:
-                            "20px"
-                        }}
+                        key={report.id}
+                        className="app-card"
                       >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+                              Accountability report
+                            </p>
 
-                        {/* REPORT DATE */}
+                            <h2 className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">
+                              {
+                                formatDate(
+                                  report.reportDate
+                                )
+                              }
+                            </h2>
 
-                        <h2>
-                          {
-                            formatDate(
-                              report.reportDate
-                            )
-                          }
-                        </h2>
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                              Timezone:{" "}
+                              <strong className="font-semibold text-slate-700 dark:text-slate-200">
+                                {report.timezone}
+                              </strong>
+                            </p>
+                          </div>
 
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
+                              {
+                                report.responses.length
+                              }{" "}
+                              {
+                                report.responses.length ===
+                                  1
+                                  ? "response"
+                                  : "responses"
+                              }
+                            </span>
 
-                        <p>
-                          Timezone:{" "}
-                          <strong>
-                            {
-                              report.timezone
-                            }
-                          </strong>
-                        </p>
+                            <span className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">
+                              {
+                                formatReportDuration(
+                                  report.totalSeconds
+                                )
+                              }{" "}
+                              total
+                            </span>
+                          </div>
+                        </div>
 
+                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                              Total
+                            </p>
 
-                        <hr />
+                            <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+                              {
+                                formatReportDuration(
+                                  report.totalSeconds
+                                )
+                              }
+                            </p>
+                          </div>
 
+                          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-200">
+                              Active
+                            </p>
 
-                        {/* USAGE */}
+                            <p className="mt-2 text-2xl font-bold text-emerald-800 dark:text-emerald-100">
+                              {
+                                formatReportDuration(
+                                  report.activeSeconds
+                                )
+                              }
+                            </p>
+                          </div>
 
-                        <h3>
-                          Usage
-                        </h3>
+                          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
+                            <p className="text-sm font-semibold text-amber-700 dark:text-amber-200">
+                              Background audio
+                            </p>
 
-
-                        <p>
-                          <strong>
-                            Total:
-                          </strong>{" "}
-
-                          {
-                            formatReportDuration(
-                              report.totalSeconds
-                            )
-                          }
-                        </p>
-
-
-                        <p>
-                          <strong>
-                            Active:
-                          </strong>{" "}
-
-                          {
-                            formatReportDuration(
-                              report.activeSeconds
-                            )
-                          }
-                        </p>
-
-
-                        <p>
-                          <strong>
-                            Background audio:
-                          </strong>{" "}
-
-                          {
-                            formatReportDuration(
-                              report.backgroundAudioSeconds
-                            )
-                          }
-                        </p>
-
-
-                        <hr />
-
-
-                        {/* SITE BREAKDOWN */}
-
-                        <h3>
-                          Sites
-                        </h3>
-
-
-                        <SiteUsageBreakdown
-                          siteUsage={
-                            siteUsage
-                          }
-                        />
-
-
-                        <hr />
-
-
-                        {/* TRACKING INTEGRITY */}
-
-                        <h3
-                          style={{
-                            marginTop:
-                              "20px"
-                          }}
-                        >
-                          Tracking Integrity
-                        </h3>
-
-
-                        <TrackingIntegrityBreakdown
-                          goodSeconds={
-                            report.goodSeconds
-                          }
-                          limitedSeconds={
-                            report.limitedSeconds
-                          }
-                          pausedSeconds={
-                            report.pausedSeconds
-                          }
-                          unknownSeconds={
-                            report.unknownSeconds
-                          }
-                        />
-
-
-                        <hr />
-
-
-                        {/* PEER RESPONSES */}
-
-                        <h3>
-                          Peer Responses
-                        </h3>
-
+                            <p className="mt-2 text-2xl font-bold text-amber-800 dark:text-amber-100">
+                              {
+                                formatReportDuration(
+                                  report.backgroundAudioSeconds
+                                )
+                              }
+                            </p>
+                          </div>
+                        </div>
 
                         {
-                          report.responses.length === 0
-                            ? (
+                          topSites.length >
+                            0 && (
+                            <div className="mt-5 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/30">
+                              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Top sites
+                              </h3>
 
-                              <p>
-                                No peer responses yet.
-                              </p>
-
-                            )
-                            : (
-
-                              <div>
-
+                              <div className="mt-3 flex flex-wrap gap-2">
                                 {
-                                  report.responses.map(
-                                    (
-                                      response
-                                    ) => (
-
-                                      <div
-                                        key={
-                                          response.id
-                                        }
-
-                                        style={{
-                                          border:
-                                            "1px solid #ddd",
-
-                                          borderRadius:
-                                            "8px",
-
-                                          padding:
-                                            "14px",
-
-                                          marginTop:
-                                            "12px"
-                                        }}
+                                  topSites.map(
+                                    (site) => (
+                                      <span
+                                        key={site.site}
+                                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
                                       >
-
-                                        <p>
-                                          <strong>
-                                            {
-                                              response.peer.email
-                                            }
-                                          </strong>
-                                        </p>
-
-
-                                        <p>
-                                          {
-                                            response.message
-                                          }
-                                        </p>
-
-
-                                        <p
-                                          style={{
-                                            fontSize:
-                                              "14px",
-
-                                            marginBottom:
-                                              "0"
-                                          }}
-                                        >
-                                          Updated:{" "}
-                                          {
-                                            response.updatedAt
-                                              .toLocaleString()
-                                          }
-                                        </p>
-
-                                      </div>
-
+                                        {site.site}:{" "}
+                                        {
+                                          formatReportDuration(
+                                            site.seconds
+                                          )
+                                        }
+                                      </span>
                                     )
                                   )
                                 }
-
                               </div>
-
-                            )
+                            </div>
+                          )
                         }
 
+                        <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                          <section>
+                            <h3 className="mb-3 font-semibold text-slate-950 dark:text-white">
+                              Site breakdown
+                            </h3>
+
+                            <SiteUsageBreakdown
+                              siteUsage={siteUsage}
+                            />
+                          </section>
+
+                          <section>
+                            <h3 className="mb-3 font-semibold text-slate-950 dark:text-white">
+                              Tracking coverage
+                            </h3>
+
+                            <TrackingIntegrityBreakdown
+                              goodSeconds={
+                                report.goodSeconds
+                              }
+                              limitedSeconds={
+                                report.limitedSeconds
+                              }
+                              pausedSeconds={
+                                report.pausedSeconds
+                              }
+                              unknownSeconds={
+                                report.unknownSeconds
+                              }
+                            />
+                          </section>
+                        </div>
+
+                        <section className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
+                          <h3 className="font-semibold text-slate-950 dark:text-white">
+                            Peer responses
+                          </h3>
+
+                          {
+                            report.responses.length ===
+                              0
+                              ? (
+                                <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+                                  No peer responses yet.
+                                </p>
+                              )
+                              : (
+                                <div className="mt-3 grid gap-3">
+                                  {
+                                    report.responses.map(
+                                      (response) => (
+                                        <div
+                                          key={response.id}
+                                          className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                                        >
+                                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                            <strong className="text-slate-950 dark:text-white">
+                                              {response.peer.email}
+                                            </strong>
+
+                                            <span className="text-sm text-slate-500 dark:text-slate-400">
+                                              Updated{" "}
+                                              {
+                                                formatDateTime(
+                                                  response.updatedAt
+                                                )
+                                              }
+                                            </span>
+                                          </div>
+
+                                          <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
+                                            {response.message}
+                                          </p>
+                                        </div>
+                                      )
+                                    )
+                                  }
+                                </div>
+                              )
+                          }
+                        </section>
                       </article>
-
                     );
-
                   }
                 )
               }
-
             </div>
-
           )
       }
-
     </main>
   );
-
 }

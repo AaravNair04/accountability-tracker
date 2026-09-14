@@ -4,6 +4,9 @@ import {
   useState
 } from "react";
 
+import {
+  showToast
+} from "@/components/ToastViewport";
 
 type Props = {
   reportId: string;
@@ -59,6 +62,11 @@ export default function ReportResponseForm({
     ) {
       setStatus(
         "Please enter a response."
+      );
+
+      showToast(
+        "Please enter a response.",
+        "error"
       );
 
       return;
@@ -121,6 +129,12 @@ export default function ReportResponseForm({
           "Failed to save response."
         );
 
+        showToast(
+          data.error ??
+          "Failed to save response.",
+          "error"
+        );
+
         return;
       }
 
@@ -136,6 +150,10 @@ export default function ReportResponseForm({
         "Response saved."
       );
 
+      showToast(
+        "Response saved."
+      );
+
     } catch (error) {
       console.error(
         "Response submission failed:",
@@ -144,6 +162,11 @@ export default function ReportResponseForm({
 
       setStatus(
         "Something went wrong."
+      );
+
+      showToast(
+        "Something went wrong.",
+        "error"
       );
 
     } finally {
@@ -155,23 +178,12 @@ export default function ReportResponseForm({
 
 
   return (
-    <section
-      style={{
-        marginTop:
-          "30px",
-
-        paddingTop:
-          "20px",
-
-        borderTop:
-          "1px solid #ddd"
-      }}
-    >
-      <h2>
+    <section className="app-card">
+      <h2 className="app-section-title">
         Your Response
       </h2>
 
-      <p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         Leave a short message for the person
         you are holding accountable.
       </p>
@@ -194,25 +206,10 @@ export default function ReportResponseForm({
         rows={
           6
         }
-        style={{
-          width:
-            "100%",
-
-          padding:
-            "12px",
-
-          border:
-            "1px solid #ccc",
-
-          borderRadius:
-            "8px",
-
-          resize:
-            "vertical"
-        }}
+        className="mt-4 w-full rounded-lg border px-4 py-3"
       />
 
-      <p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         {message.length}/1000
       </p>
 
@@ -224,6 +221,7 @@ export default function ReportResponseForm({
         onClick={
           submitResponse
         }
+        className="app-button-primary mt-4"
       >
         {
           saving
@@ -236,7 +234,7 @@ export default function ReportResponseForm({
 
       {
         status && (
-          <p>
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
             {status}
           </p>
         )

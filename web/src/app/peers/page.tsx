@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -226,28 +228,21 @@ export default async function PeersPage() {
 
   return (
     <main className="app-page-narrow space-y-6">
-
-      <Link href="/">
-        ← Back to Dashboard
-      </Link>
-
-
-      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-        Accountability Peers
-      </h1>
-
-
-      <p>
-        Invite people you trust to
-        hold you accountable.
-      </p>
-
-
-      <p>
-        <Link href="/peers/preview">
-          Preview What Peers See
-        </Link>
-      </p>
+      <PageHeader
+        backHref="/"
+        backLabel="← Back to Dashboard"
+        eyebrow="Peers"
+        title="Accountability Peers"
+        description="Invite people you trust to hold you accountable and review the people who trust you."
+        action={
+          <Link
+            href="/peers/preview"
+            className="app-button-secondary inline-flex no-underline"
+          >
+            Preview What Peers See
+          </Link>
+        }
+      />
 
 
       {/* PEOPLE I HOLD ACCOUNTABLE */}
@@ -262,10 +257,10 @@ export default async function PeersPage() {
         {
           receivedInvitations.length === 0
             ? (
-              <p className="app-card-muted text-sm text-slate-500 dark:text-slate-400">
-                No accountability
-                invitations yet.
-              </p>
+              <EmptyState
+                title="No one has asked you yet"
+                description="When someone invites you to hold them accountable, their request will appear here."
+              />
             )
             : (
               <div className="grid gap-3">
@@ -394,10 +389,12 @@ export default async function PeersPage() {
         {
           sentInvitations.length === 0
             ? (
-              <p className="app-card-muted text-sm text-slate-500 dark:text-slate-400">
-                You haven&apos;t invited
-                anyone yet.
-              </p>
+              <EmptyState
+                title="Invite your first accountability peer"
+                description="Choose someone you trust so they can view your daily accountability reports."
+                actionHref="#invite-peer"
+                actionLabel="Invite a Peer"
+              />
             )
             : (
               <div className="grid gap-3">
@@ -616,7 +613,10 @@ export default async function PeersPage() {
 
       {/* INVITE PEER */}
 
-      <section className="app-card">
+      <section
+        id="invite-peer"
+        className="app-card scroll-mt-24"
+      >
 
         <h2 className="app-section-title">
           Invite a Peer

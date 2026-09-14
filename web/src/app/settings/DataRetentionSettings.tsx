@@ -4,6 +4,9 @@ import {
   useState
 } from "react";
 
+import {
+  showToast
+} from "@/components/ToastViewport";
 
 type Props = {
   currentRetentionDays: number | null;
@@ -155,6 +158,12 @@ export default function DataRetentionSettings({
           "Could not update data retention."
         );
 
+        showToast(
+          data.error ??
+          "Could not update data retention.",
+          "error"
+        );
+
         return;
       }
 
@@ -175,10 +184,17 @@ export default function DataRetentionSettings({
       const deleted =
         data.cleanup?.deleted;
 
-      setMessage(
+      const successMessage =
         deleted
           ? `Retention saved. Deleted ${deleted.usageSessions ?? 0} expired usage sessions and ${deleted.trackingEvents ?? 0} expired device events.`
-          : "Retention saved."
+          : "Retention saved.";
+
+      setMessage(
+        successMessage
+      );
+
+      showToast(
+        successMessage
       );
 
     } catch (error) {
@@ -189,6 +205,11 @@ export default function DataRetentionSettings({
 
       setMessage(
         "Could not update data retention."
+      );
+
+      showToast(
+        "Could not update data retention.",
+        "error"
       );
 
     } finally {

@@ -14,6 +14,9 @@ import {
 import {
   createClient
 } from "@/lib/supabase/client";
+import {
+  showToast
+} from "./ToastViewport";
 
 export default function ProfileMenu() {
   const [open, setOpen] =
@@ -21,6 +24,11 @@ export default function ProfileMenu() {
 
   const [loggingOut, setLoggingOut] =
     useState(false);
+
+  const [email, setEmail] =
+    useState<string | null>(
+      null
+    );
 
   const menuRef =
     useRef<HTMLDivElement | null>(
@@ -32,6 +40,33 @@ export default function ProfileMenu() {
 
   const pathname =
     usePathname();
+
+  useEffect(
+    () => {
+      const supabase =
+        createClient();
+
+      supabase.auth.getUser()
+        .then(
+          ({
+            data
+          }) => {
+            setEmail(
+              data.user?.email ??
+              null
+            );
+          }
+        )
+        .catch(
+          () => {
+            setEmail(
+              null
+            );
+          }
+        );
+    },
+    []
+  );
 
   useEffect(
     () => {
@@ -96,7 +131,25 @@ export default function ProfileMenu() {
     const supabase =
       createClient();
 
-    await supabase.auth.signOut();
+    const {
+      error
+    } =
+      await supabase.auth.signOut();
+
+    if (
+      error
+    ) {
+      setLoggingOut(
+        false
+      );
+
+      showToast(
+        error.message,
+        "error"
+      );
+
+      return;
+    }
 
     setOpen(
       false
@@ -154,6 +207,19 @@ export default function ProfileMenu() {
             aria-label="Profile menu"
             className="absolute right-0 mt-2 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-900"
           >
+            <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                My Profile
+              </p>
+
+              <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">
+                {
+                  email ??
+                  "Signed in"
+                }
+              </p>
+            </div>
+
             <Link
               href="/profile"
               role="menuitem"
@@ -172,6 +238,20 @@ export default function ProfileMenu() {
               className="block px-4 py-2.5 text-sm font-semibold text-slate-700 no-underline transition-colors hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
             >
               View Profile
+            </Link>
+
+            <Link
+              href="/settings"
+              role="menuitem"
+              onClick={
+                () =>
+                  setOpen(
+                    false
+                  )
+              }
+              className="block px-4 py-2.5 text-sm font-semibold text-slate-700 no-underline transition-colors hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              Settings
             </Link>
 
             <button

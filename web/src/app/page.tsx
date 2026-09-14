@@ -4,6 +4,8 @@ import {
   redirect
 } from "next/navigation";
 
+import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
 import {
   prisma
 } from "@/lib/prisma";
@@ -104,6 +106,68 @@ function formatDateTime(
   ).format(
     date
   );
+}
+
+function formatTimeRange(
+  start: Date,
+  end: Date,
+  timeZone: string
+) {
+  const formatter =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone,
+        timeStyle:
+          "short"
+      }
+    );
+
+  return `${formatter.format(
+    start
+  )} - ${formatter.format(
+    end
+  )}`;
+}
+
+function getActivityTypeLabel(
+  type: string
+) {
+  if (
+    type ===
+    "background_audio"
+  ) {
+    return "Background audio";
+  }
+
+  if (
+    type ===
+    "active"
+  ) {
+    return "Active";
+  }
+
+  return type;
+}
+
+function getActivityTypeClassName(
+  type: string
+) {
+  if (
+    type ===
+    "active"
+  ) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200";
+  }
+
+  if (
+    type ===
+    "background_audio"
+  ) {
+    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
 }
 
 
@@ -434,39 +498,107 @@ export default async function Home() {
 
   return (
     <main className="app-page space-y-8">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-            Dashboard
+      <PageHeader
+        eyebrow="Dashboard"
+        title="Accountability Tracker"
+        description={`Logged in as ${user.email} in ${profile.timezone}.`}
+        action={
+          <Link
+            href="/notifications"
+            className="inline-flex items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 no-underline hover:bg-indigo-100 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+          >
+            Notifications
+            {
+              notificationCount > 0
+                ? ` (${notificationCount})`
+                : ""
+            }
+          </Link>
+        }
+      />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Today&apos;s total
           </p>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-            Accountability Tracker
-          </h1>
+          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+            {
+              formatDuration(
+                totalSeconds
+              )
+            }
+          </p>
 
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Logged in as{" "}
-            <strong className="font-semibold text-slate-700 dark:text-slate-200">
-              {user.email}
-            </strong>
-            {" "}in{" "}
-            <strong className="font-semibold text-slate-700 dark:text-slate-200">
-              {profile.timezone}
-            </strong>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            All tracked activity
           </p>
         </div>
 
-        <Link
-          href="/notifications"
-          className="inline-flex items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 no-underline hover:bg-indigo-100 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
-        >
-          Notifications
-          {
-            notificationCount > 0
-              ? ` (${notificationCount})`
-              : ""
-          }
-        </Link>
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Active time
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-emerald-600 dark:text-emerald-300">
+            {
+              formatDuration(
+                activeSeconds
+              )
+            }
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Focused foreground use
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Distractions
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-red-600 dark:text-red-300">
+            {shortActiveDistractionCount}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Short active bursts
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Tracking status
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+            {current.status}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {
+              current.device
+                ? current.device.name
+                : "No linked device"
+            }
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Needs attention
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-indigo-600 dark:text-indigo-300">
+            {notificationCount}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Peer and report updates
+          </p>
+        </div>
       </section>
 
 
@@ -771,72 +903,88 @@ export default async function Home() {
           recentActivitySegments.length ===
             0
             ? (
-              <p className="app-card-muted text-sm text-slate-500 dark:text-slate-400">
-                No activity blocks over 3 minutes today.
-              </p>
+              <EmptyState
+                title="No readable activity blocks yet"
+                description="Once a tracked site stays active for 3 minutes or more, it will appear here as a timeline block."
+                actionHref="/tracked-sites"
+                actionLabel="Manage tracked websites"
+              />
             )
             : (
-              recentActivitySegments.map(
-                (segment) => (
-                  <article
-                    key={
-                      segment.id
-                    }
-                    className="app-card"
-                  >
-                    <strong className="text-slate-950 dark:text-white">
-                      {segment.site}
-                    </strong>
+              <div className="relative space-y-3 before:absolute before:left-4 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-slate-200 dark:before:bg-slate-800">
+                {
+                  recentActivitySegments.map(
+                    (segment) => (
+                      <article
+                        key={
+                          segment.id
+                        }
+                        className="relative pl-10"
+                      >
+                        <span className="absolute left-2.5 top-6 h-3 w-3 rounded-full border-2 border-white bg-indigo-600 shadow-sm dark:border-slate-950 dark:bg-indigo-400" />
 
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                      Type:{" "}
-                      {segment.type}
-                    </p>
+                        <div className="app-card flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <strong className="text-slate-950 dark:text-white">
+                                {segment.site}
+                              </strong>
 
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Duration:{" "}
-                      {
-                        formatDuration(
-                          segment.durationSeconds
-                        )
-                      }
-                    </p>
+                              <span
+                                className={
+                                  [
+                                    "rounded-full border px-2.5 py-1 text-xs font-semibold",
+                                    getActivityTypeClassName(
+                                      segment.type
+                                    )
+                                  ].join(
+                                    " "
+                                  )
+                                }
+                              >
+                                {
+                                  getActivityTypeLabel(
+                                    segment.type
+                                  )
+                                }
+                              </span>
+                            </div>
 
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Started:{" "}
-                      {
-                        formatDateTime(
-                          segment.startTime,
-                          profile.timezone
-                        )
-                      }
-                    </p>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                              {
+                                formatTimeRange(
+                                  segment.startTime,
+                                  segment.endTime,
+                                  profile.timezone
+                                )
+                              }
+                            </p>
 
+                            {
+                              segment.sessionCount >
+                                1 && (
+                                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                  Combined from{" "}
+                                  {segment.sessionCount}{" "}
+                                  continuous sessions
+                                </p>
+                              )
+                            }
+                          </div>
 
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Ended:{" "}
-                      {
-                        formatDateTime(
-                          segment.endTime,
-                          profile.timezone
-                        )
-                      }
-                    </p>
-
-
-                    {
-                      segment.sessionCount >
-                        1 && (
-                        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                          Combined from{" "}
-                          {segment.sessionCount}{" "}
-                          continuous sessions
-                        </p>
-                      )
-                    }
-                  </article>
-                )
-              )
+                          <p className="text-2xl font-bold text-slate-950 dark:text-white">
+                            {
+                              formatDuration(
+                                segment.durationSeconds
+                              )
+                            }
+                          </p>
+                        </div>
+                      </article>
+                    )
+                  )
+                }
+              </div>
             )
         }
       </section>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import PageHeader from "@/components/PageHeader";
 import {
   SiteUsageBreakdown,
   TrackingIntegrityBreakdown,
@@ -120,19 +121,13 @@ export default async function PeerReportPage({
 
     return (
       <main className="app-page-narrow space-y-6">
-
-        <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-          Access Denied
-        </h1>
-
-        <p>
-          You are not an accepted
-          accountability peer for this user.
-        </p>
-
-        <Link href="/peers">
-          ← Back to Trusted Peers
-        </Link>
+        <PageHeader
+          backHref="/peers"
+          backLabel="← Back to Trusted Peers"
+          eyebrow="Peer Reports"
+          title="Access Denied"
+          description="You are not an accepted accountability peer for this user."
+        />
 
       </main>
     );
@@ -164,18 +159,13 @@ export default async function PeerReportPage({
 
     return (
       <main className="app-page-narrow space-y-6">
-
-        <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-          Report Not Found
-        </h1>
-
-        <Link
-          href={
-            `/peers/view/${userId}/reports`
-          }
-        >
-          ← Back to Reports
-        </Link>
+        <PageHeader
+          backHref={`/peers/view/${userId}/reports`}
+          backLabel="← Back to Reports"
+          eyebrow="Peer Reports"
+          title="Report Not Found"
+          description="This report could not be found."
+        />
 
       </main>
     );
@@ -215,19 +205,13 @@ export default async function PeerReportPage({
 
     return (
       <main className="app-page-narrow space-y-6">
-
-        <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-          Access Denied
-        </h1>
-
-        <p>
-          This report was not delivered
-          to your account.
-        </p>
-
-        <Link href="/inbox">
-          ← Back to Report Inbox
-        </Link>
+        <PageHeader
+          backHref="/inbox"
+          backLabel="← Back to Report Inbox"
+          eyebrow="Peer Reports"
+          title="Access Denied"
+          description="This report was not delivered to your account."
+        />
 
       </main>
     );
@@ -313,140 +297,102 @@ export default async function PeerReportPage({
 
   return (
     <main className="app-page-narrow space-y-6">
-
-      <Link href="/inbox">
-        ← Back to Report Inbox
-      </Link>
-
-
-      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-        Accountability Report
-      </h1>
-
-
-      <p>
-        Shared by{" "}
-        <strong>
-          {relationship.owner.email}
-        </strong>
-      </p>
-
-
-      <h2>
-        {
-          formatReportDate(
-            report.reportDate
-          )
+      <PageHeader
+        backHref="/inbox"
+        backLabel="← Back to Report Inbox"
+        eyebrow="Accountability Report"
+        title={formatReportDate(
+          report.reportDate
+        )}
+        description={`Shared by ${relationship.owner.email}. Timezone: ${report.timezone}.`}
+        action={
+          <Link
+            href={`/peers/view/${userId}/reports`}
+            className="app-button-secondary inline-flex no-underline"
+          >
+            View all reports
+          </Link>
         }
-      </h2>
+      />
 
+      <article className="app-card">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              Total
+            </p>
 
-      <p>
-        Timezone:{" "}
-        <strong>
-          {report.timezone}
-        </strong>
-      </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+              {
+                formatReportDuration(
+                  report.totalSeconds
+                )
+              }
+            </p>
+          </div>
 
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-200">
+              Active
+            </p>
 
-      <hr />
+            <p className="mt-2 text-2xl font-bold text-emerald-800 dark:text-emerald-100">
+              {
+                formatReportDuration(
+                  report.activeSeconds
+                )
+              }
+            </p>
+          </div>
 
+          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-200">
+              Background audio
+            </p>
 
-      {/* USAGE */}
+            <p className="mt-2 text-2xl font-bold text-amber-800 dark:text-amber-100">
+              {
+                formatReportDuration(
+                  report.backgroundAudioSeconds
+                )
+              }
+            </p>
+          </div>
+        </div>
 
-      <section>
+        <div className="mt-6 grid gap-5 lg:grid-cols-2">
+          <section>
+            <h2 className="mb-3 font-semibold text-slate-950 dark:text-white">
+              Site Breakdown
+            </h2>
 
-        <h2>
-          Usage
-        </h2>
+            <SiteUsageBreakdown
+              siteUsage={siteUsage}
+            />
+          </section>
 
+          <section>
+            <h2 className="mb-3 font-semibold text-slate-950 dark:text-white">
+              Tracking Integrity
+            </h2>
 
-        <p>
-          Total tracked usage:{" "}
-          <strong>
-            {
-              formatReportDuration(
-                report.totalSeconds
-              )
-            }
-          </strong>
-        </p>
-
-
-        <p>
-          Active usage:{" "}
-          {
-            formatReportDuration(
-              report.activeSeconds
-            )
-          }
-        </p>
-
-
-        <p>
-          Background audio:{" "}
-          {
-            formatReportDuration(
-              report.backgroundAudioSeconds
-            )
-          }
-        </p>
-
-      </section>
-
-
-      <hr />
-
-
-      {/* SITE BREAKDOWN */}
-
-      <section>
-
-        <h2>
-          Site Breakdown
-        </h2>
-
-
-        <SiteUsageBreakdown
-          siteUsage={
-            siteUsage
-          }
-        />
-
-      </section>
-
-
-      <hr />
-
-
-      {/* TRACKING INTEGRITY */}
-
-      <section>
-
-        <h2>
-          Tracking Integrity
-        </h2>
-
-
-        <TrackingIntegrityBreakdown
-          goodSeconds={
-            report.goodSeconds
-          }
-          limitedSeconds={
-            report.limitedSeconds
-          }
-          pausedSeconds={
-            report.pausedSeconds
-          }
-          unknownSeconds={
-            report.unknownSeconds
-          }
-        />
-
-      </section>
-
-
-      {/* PEER RESPONSE */}
+            <TrackingIntegrityBreakdown
+              goodSeconds={
+                report.goodSeconds
+              }
+              limitedSeconds={
+                report.limitedSeconds
+              }
+              pausedSeconds={
+                report.pausedSeconds
+              }
+              unknownSeconds={
+                report.unknownSeconds
+              }
+            />
+          </section>
+        </div>
+      </article>
 
       <ReportResponseForm
         reportId={
@@ -459,17 +405,6 @@ export default async function PeerReportPage({
         }
       />
 
-
-      <hr />
-
-
-      <Link
-        href={
-          `/peers/view/${userId}/reports`
-        }
-      >
-        View all reports from this user
-      </Link>
 
     </main>
   );

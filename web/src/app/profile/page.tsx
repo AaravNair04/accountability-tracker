@@ -3,6 +3,7 @@ import {
   redirect
 } from "next/navigation";
 
+import PageHeader from "@/components/PageHeader";
 import {
   prisma
 } from "@/lib/prisma";
@@ -225,14 +226,23 @@ export default async function ProfilePage() {
 
   return (
     <main className="app-page-narrow space-y-6">
-      <Link
-        href="/"
-        className="text-sm"
-      >
-        ← Back to Dashboard
-      </Link>
+      <PageHeader
+        backHref="/"
+        backLabel="← Back to Dashboard"
+        eyebrow="Account"
+        title="My Profile"
+        description="Review your account details, accountability setup, tracked websites, and device status."
+        action={
+          <Link
+            href="/settings"
+            className="app-button-secondary inline-flex no-underline"
+          >
+            Account Settings
+          </Link>
+        }
+      />
 
-      <section className="app-card flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <section className="app-card flex flex-col gap-5 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xl font-bold text-white shadow-sm dark:bg-indigo-500">
             {
@@ -256,13 +266,6 @@ export default async function ProfilePage() {
             </p>
           </div>
         </div>
-
-        <Link
-          href="/settings"
-          className="app-button-secondary inline-flex self-start no-underline sm:self-center"
-        >
-          Account Settings
-        </Link>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

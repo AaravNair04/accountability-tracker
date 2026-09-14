@@ -1,9 +1,16 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import {
+  redirect
+} from "next/navigation";
 
-import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
-
+import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
+import {
+  prisma
+} from "@/lib/prisma";
+import {
+  createClient
+} from "@/lib/supabase/server";
 
 function formatDateTime(
   date: Date
@@ -13,13 +20,11 @@ function formatDateTime(
     {
       dateStyle:
         "medium",
-
       timeStyle:
         "short"
     }
   );
 }
-
 
 function formatReportDate(
   date: Date
@@ -29,49 +34,41 @@ function formatReportDate(
     {
       year:
         "numeric",
-
       month:
         "long",
-
       day:
         "numeric",
-
       timeZone:
         "UTC"
     }
   );
 }
 
-
 type NotificationCardProps = {
   children: React.ReactNode;
 };
-
 
 function NotificationCard({
   children
 }: NotificationCardProps) {
   return (
-    <article
-      style={{
-        border:
-          "1px solid #ddd",
-
-        borderRadius:
-          "8px",
-
-        padding:
-          "16px",
-
-        marginTop:
-          "12px"
-      }}
-    >
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {children}
     </article>
   );
 }
 
+function SectionEmpty({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <p className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+      {children}
+    </p>
+  );
+}
 
 export default async function NotificationsPage() {
   const supabase =
@@ -159,7 +156,6 @@ export default async function NotificationsPage() {
                 select: {
                   id:
                     true,
-
                   email:
                     true
                 }
@@ -197,7 +193,6 @@ export default async function NotificationsPage() {
             select: {
               id:
                 true,
-
               reportDate:
                 true
             }
@@ -246,46 +241,42 @@ export default async function NotificationsPage() {
 
   return (
     <main className="app-page-narrow space-y-6">
-      <Link href="/">
-        ← Back to Dashboard
-      </Link>
-
-      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-        Notifications
-      </h1>
+      <PageHeader
+        backHref="/"
+        backLabel="← Back to Dashboard"
+        eyebrow="Notifications"
+        title="Notifications"
+        description="Invitations, unread reports, peer responses, and pending accountability updates."
+        action={
+          <Link
+            href="/inbox"
+            className="app-button-secondary inline-flex no-underline"
+          >
+            Go to Inbox
+          </Link>
+        }
+      />
 
       {
-        totalCount === 0
+        totalCount ===
+          0
           ? (
-            <div className="app-card">
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                No pending notifications right now.
-              </p>
-
-              <Link
-                href="/inbox"
-                className="app-button-primary mt-4 inline-flex no-underline"
-              >
-                Go to Inbox
-              </Link>
-            </div>
+            <EmptyState
+              title="Nothing needs attention right now"
+              description="You are caught up. You can still open the inbox to review accountability reports from others."
+              actionHref="/inbox"
+              actionLabel="Go to Inbox"
+            />
           )
           : (
-            <p>
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm font-semibold text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">
               {`${totalCount} item${totalCount === 1 ? "" : "s"} need attention.`}
-            </p>
+            </div>
           )
       }
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-      <section>
-        <h2>
+      <section className="space-y-3">
+        <h2 className="app-section-title">
           Invitations to Review
         </h2>
 
@@ -293,26 +284,21 @@ export default async function NotificationsPage() {
           pendingInvitations.length ===
             0
             ? (
-              <p>
+              <SectionEmpty>
                 No pending invitations.
-              </p>
+              </SectionEmpty>
             )
             : pendingInvitations.map(
                 (invitation) => (
-                  <NotificationCard
-                    key={
-                      invitation.id
-                    }
-                  >
-                    <p>
-                      <strong>
+                  <NotificationCard key={invitation.id}>
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
+                      <strong className="text-slate-950 dark:text-white">
                         {invitation.owner.email}
                       </strong>{" "}
-                      invited you to hold them
-                      accountable.
+                      invited you to hold them accountable.
                     </p>
 
-                    <p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                       Sent{" "}
                       {
                         formatDateTime(
@@ -321,7 +307,10 @@ export default async function NotificationsPage() {
                       }
                     </p>
 
-                    <Link href="/peers">
+                    <Link
+                      href="/peers"
+                      className="app-button-primary mt-4 inline-flex no-underline"
+                    >
                       Review invitation
                     </Link>
                   </NotificationCard>
@@ -330,15 +319,8 @@ export default async function NotificationsPage() {
         }
       </section>
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-      <section>
-        <h2>
+      <section className="space-y-3">
+        <h2 className="app-section-title">
           Unread Reports
         </h2>
 
@@ -346,25 +328,21 @@ export default async function NotificationsPage() {
           unreadDeliveries.length ===
             0
             ? (
-              <p>
+              <SectionEmpty>
                 No unread accountability reports.
-              </p>
+              </SectionEmpty>
             )
             : unreadDeliveries.map(
                 (delivery) => (
-                  <NotificationCard
-                    key={
-                      delivery.id
-                    }
-                  >
-                    <p>
+                  <NotificationCard key={delivery.id}>
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
                       New report from{" "}
-                      <strong>
+                      <strong className="text-slate-950 dark:text-white">
                         {delivery.report.user.email}
                       </strong>
                     </p>
 
-                    <p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                       Report date:{" "}
                       {
                         formatReportDate(
@@ -377,6 +355,7 @@ export default async function NotificationsPage() {
                       href={
                         `/peers/view/${delivery.report.user.id}/reports/${delivery.report.id}`
                       }
+                      className="app-button-primary mt-4 inline-flex no-underline"
                     >
                       Open report
                     </Link>
@@ -386,15 +365,8 @@ export default async function NotificationsPage() {
         }
       </section>
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-      <section>
-        <h2>
+      <section className="space-y-3">
+        <h2 className="app-section-title">
           New Peer Responses
         </h2>
 
@@ -402,19 +374,15 @@ export default async function NotificationsPage() {
           unseenResponses.length ===
             0
             ? (
-              <p>
+              <SectionEmpty>
                 No new responses to your reports.
-              </p>
+              </SectionEmpty>
             )
             : unseenResponses.map(
                 (response) => (
-                  <NotificationCard
-                    key={
-                      response.id
-                    }
-                  >
-                    <p>
-                      <strong>
+                  <NotificationCard key={response.id}>
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
+                      <strong className="text-slate-950 dark:text-white">
                         {response.peer.email}
                       </strong>{" "}
                       responded to your{" "}
@@ -426,7 +394,7 @@ export default async function NotificationsPage() {
                       report.
                     </p>
 
-                    <p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                       Updated{" "}
                       {
                         formatDateTime(
@@ -439,6 +407,7 @@ export default async function NotificationsPage() {
                       href={
                         `/reports#report-${response.report.id}`
                       }
+                      className="app-button-primary mt-4 inline-flex no-underline"
                     >
                       View response
                     </Link>
@@ -448,15 +417,8 @@ export default async function NotificationsPage() {
         }
       </section>
 
-      <hr
-        style={{
-          margin:
-            "30px 0"
-        }}
-      />
-
-      <section>
-        <h2>
+      <section className="space-y-3">
+        <h2 className="app-section-title">
           Invitations You Sent
         </h2>
 
@@ -464,26 +426,22 @@ export default async function NotificationsPage() {
           sentPendingInvitations.length ===
             0
             ? (
-              <p>
+              <SectionEmpty>
                 No sent invitations are waiting.
-              </p>
+              </SectionEmpty>
             )
             : sentPendingInvitations.map(
                 (invitation) => (
-                  <NotificationCard
-                    key={
-                      invitation.id
-                    }
-                  >
-                    <p>
+                  <NotificationCard key={invitation.id}>
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
                       Waiting for{" "}
-                      <strong>
+                      <strong className="text-slate-950 dark:text-white">
                         {invitation.peer.email}
                       </strong>{" "}
                       to accept your invitation.
                     </p>
 
-                    <p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                       Sent{" "}
                       {
                         formatDateTime(
@@ -492,7 +450,10 @@ export default async function NotificationsPage() {
                       }
                     </p>
 
-                    <Link href="/peers">
+                    <Link
+                      href="/peers"
+                      className="app-button-primary mt-4 inline-flex no-underline"
+                    >
                       View peers
                     </Link>
                   </NotificationCard>

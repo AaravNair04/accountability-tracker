@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import PageHeader from "@/components/PageHeader";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
@@ -71,13 +71,11 @@ export default async function SettingsPage() {
     return (
       <main className="app-page-narrow">
 
-        <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-          Settings
-        </h1>
-
-        <p>
-          User profile not found.
-        </p>
+        <PageHeader
+          eyebrow="Settings"
+          title="Settings"
+          description="User profile not found."
+        />
 
       </main>
     );
@@ -86,15 +84,13 @@ export default async function SettingsPage() {
 
   return (
     <main className="app-page-narrow space-y-6">
-
-      <Link href="/">
-        ← Back to Dashboard
-      </Link>
-
-
-      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-        Settings
-      </h1>
+      <PageHeader
+        backHref="/"
+        backLabel="← Back to Dashboard"
+        eyebrow="Account"
+        title="Settings"
+        description="Manage timezone, exports, data retention, deletion controls, and audit history."
+      />
 
 
       <TimezoneSettings

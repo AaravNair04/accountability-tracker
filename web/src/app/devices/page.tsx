@@ -1,13 +1,13 @@
 import Link from "next/link";
-
 import {
   redirect
 } from "next/navigation";
 
+import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
 import {
   prisma
 } from "@/lib/prisma";
-
 import {
   createClient
 } from "@/lib/supabase/server";
@@ -15,10 +15,8 @@ import {
 import RevokeDeviceButton from "./RevokeDeviceButton";
 import RenameDeviceForm from "./RenameDeviceForm";
 
-
 const DEVICE_STALE_MINUTES =
   30;
-
 
 function formatRelativeTime(
   date: Date | null
@@ -80,7 +78,6 @@ function formatRelativeTime(
   )}d ago`;
 }
 
-
 function formatDateTime(
   date: Date | null,
   timeZone: string
@@ -95,10 +92,8 @@ function formatDateTime(
     "en-US",
     {
       timeZone,
-
       dateStyle:
         "medium",
-
       timeStyle:
         "medium"
     }
@@ -107,14 +102,12 @@ function formatDateTime(
   );
 }
 
-
 type Device =
   Awaited<
     ReturnType<
       typeof prisma.device.findMany
     >
   >[number];
-
 
 function getDeviceStatus(
   device: Device,
@@ -126,8 +119,8 @@ function getDeviceStatus(
     return {
       label:
         "Revoked",
-      tone:
-        "#8a1f1f",
+      className:
+        "border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200",
       detail:
         "This browser can no longer upload tracking data."
     };
@@ -139,8 +132,8 @@ function getDeviceStatus(
     return {
       label:
         "Unconfirmed",
-      tone:
-        "#8a5a00",
+      className:
+        "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
       detail:
         "The extension has not completed its first verification yet."
     };
@@ -164,8 +157,8 @@ function getDeviceStatus(
     return {
       label:
         "Needs attention",
-      tone:
-        "#8a5a00",
+      className:
+        "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
       detail:
         "This browser has not synced recently."
     };
@@ -174,13 +167,12 @@ function getDeviceStatus(
   return {
     label:
       "Active",
-    tone:
-      "#276738",
+    className:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
     detail:
       "This browser is syncing normally."
   };
 }
-
 
 function DeviceCard({
   device,
@@ -206,116 +198,103 @@ function DeviceCard({
         : "Disabled";
 
   return (
-    <article
-      style={{
-        border:
-          "1px solid #ccc",
-        borderRadius:
-          "8px",
-        padding:
-          "18px",
-        marginBottom:
-          "14px"
-      }}
-    >
-      <div
-        style={{
-          display:
-            "flex",
-          justifyContent:
-            "space-between",
-          gap:
-            "12px",
-          alignItems:
-            "flex-start"
-        }}
-      >
-        <h3
-          style={{
-            margin:
-              0
-          }}
-        >
-          {device.name}
-        </h3>
+    <article className="app-card">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
+            {device.name}
+          </h3>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {status.detail}
+          </p>
+        </div>
 
         <span
-          style={{
-            color:
-              status.tone,
-            fontWeight:
-              700
-          }}
+          className={
+            [
+              "inline-flex rounded-full border px-3 py-1 text-sm font-semibold",
+              status.className
+            ].join(
+              " "
+            )
+          }
         >
           {status.label}
         </span>
       </div>
 
-      <p>
-        {status.detail}
-      </p>
-
       {
         !device.revokedAt && (
-          <RenameDeviceForm
-            deviceId={
-              device.id
-            }
-            currentName={
-              device.name
-            }
-          />
+          <div className="mt-4">
+            <RenameDeviceForm
+              deviceId={device.id}
+              currentName={device.name}
+            />
+          </div>
         )
       }
 
-      <p>
-        <strong>
-          Last seen:
-        </strong>{" "}
-        {
-          formatRelativeTime(
-            device.lastSeenAt
-          )
-        }
-      </p>
+      <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+          <dt className="font-semibold text-slate-500 dark:text-slate-400">
+            Last seen
+          </dt>
 
-      <p>
-        <strong>
-          Last seen at:
-        </strong>{" "}
-        {
-          formatDateTime(
-            device.lastSeenAt,
-            timeZone
-          )
-        }
-      </p>
+          <dd className="mt-1 text-slate-800 dark:text-slate-100">
+            {
+              formatRelativeTime(
+                device.lastSeenAt
+              )
+            }
+          </dd>
+        </div>
 
-      <p>
-        <strong>
-          Linked at:
-        </strong>{" "}
-        {
-          formatDateTime(
-            device.confirmedAt,
-            timeZone
-          )
-        }
-      </p>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+          <dt className="font-semibold text-slate-500 dark:text-slate-400">
+            Last sync time
+          </dt>
 
-      <p>
-        <strong>
-          Incognito access:
-        </strong>{" "}
-        {incognitoStatus}
-      </p>
+          <dd className="mt-1 text-slate-800 dark:text-slate-100">
+            {
+              formatDateTime(
+                device.lastSeenAt,
+                timeZone
+              )
+            }
+          </dd>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+          <dt className="font-semibold text-slate-500 dark:text-slate-400">
+            Linked
+          </dt>
+
+          <dd className="mt-1 text-slate-800 dark:text-slate-100">
+            {
+              formatDateTime(
+                device.confirmedAt,
+                timeZone
+              )
+            }
+          </dd>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+          <dt className="font-semibold text-slate-500 dark:text-slate-400">
+            Incognito access
+          </dt>
+
+          <dd className="mt-1 text-slate-800 dark:text-slate-100">
+            {incognitoStatus}
+          </dd>
+        </div>
+      </dl>
 
       {
         device.revokedAt && (
-          <p>
-            <strong>
-              Revoked:
-            </strong>{" "}
+          <p className="mt-4 rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+            Revoked{" "}
             {
               formatDateTime(
                 device.revokedAt,
@@ -326,30 +305,22 @@ function DeviceCard({
         )
       }
 
-      <p
-        style={{
-          fontSize:
-            "12px",
-          color:
-            "#666"
-        }}
-      >
+      <p className="mt-4 break-all text-xs text-slate-400 dark:text-slate-500">
         Device ID: {device.id}
       </p>
 
       {
         !device.revokedAt && (
-          <RevokeDeviceButton
-            deviceId={
-              device.id
-            }
-          />
+          <div className="mt-4">
+            <RevokeDeviceButton
+              deviceId={device.id}
+            />
+          </div>
         )
       }
     </article>
   );
 }
-
 
 export default async function DevicesPage() {
   const supabase =
@@ -474,71 +445,74 @@ export default async function DevicesPage() {
 
   return (
     <main className="app-page-narrow space-y-6">
-      <Link href="/">
-        ← Back to Dashboard
-      </Link>
-
-      <h1 className="text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-        Devices
-      </h1>
-
-      <p>
-        Browser extensions linked to your
-        accountability account.
-      </p>
+      <PageHeader
+        backHref="/"
+        backLabel="← Back to Dashboard"
+        eyebrow="Devices"
+        title="Connected Devices"
+        description="Browser extensions linked to your accountability account."
+        action={
+          <Link
+            href="/devices/link"
+            className="app-button-primary inline-flex no-underline"
+          >
+            Link Extension
+          </Link>
+        }
+      />
 
       {
         devices.length ===
           0
           ? (
-            <p>
-              No confirmed devices are linked yet.
-            </p>
+            <EmptyState
+              title="No browser extension linked yet"
+              description="Connect the browser extension so Accountability Tracker can receive usage sessions from this device."
+              actionHref="/devices/link"
+              actionLabel="Connect browser extension"
+            />
           )
           : (
             sections.map(
               (section) => (
                 <section
                   key={section.title}
-                  style={{
-                    marginTop:
-                      "28px"
-                  }}
+                  className="space-y-3"
                 >
-                  <h2>
-                    {section.title}
-                  </h2>
+                  <div>
+                    <h2 className="app-section-title">
+                      {section.title}
+                    </h2>
 
-                  <p>
-                    {section.description}
-                  </p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {section.description}
+                    </p>
+                  </div>
 
                   {
                     section.devices.length ===
                       0
                       ? (
-                        <p>
+                        <p className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
                           No devices in this section.
                         </p>
                       )
-                      : section.devices.map(
-                          (device) => (
-                            <DeviceCard
-                              key={
-                                device.id
-                              }
-                              device={
-                                device
-                              }
-                              now={
-                                now
-                              }
-                              timeZone={
-                                timeZone
-                              }
-                            />
-                          )
-                        )
+                      : (
+                        <div className="grid gap-3">
+                          {
+                            section.devices.map(
+                              (device) => (
+                                <DeviceCard
+                                  key={device.id}
+                                  device={device}
+                                  now={now}
+                                  timeZone={timeZone}
+                                />
+                              )
+                            )
+                          }
+                        </div>
+                      )
                   }
                 </section>
               )
