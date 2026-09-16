@@ -249,10 +249,10 @@ export default async function NotificationsPage() {
         description="Invitations, unread reports, peer responses, and pending accountability updates."
         action={
           <Link
-            href="/inbox"
+            href="/reports/peers"
             className="app-button-secondary inline-flex no-underline"
           >
-            Go to Inbox
+            Open peer reports
           </Link>
         }
       />
@@ -263,9 +263,9 @@ export default async function NotificationsPage() {
           ? (
             <EmptyState
               title="Nothing needs attention right now"
-              description="You are caught up. You can still open the inbox to review accountability reports from others."
-              actionHref="/inbox"
-              actionLabel="Go to Inbox"
+              description="You are caught up. You can still open peer reports to review accountability reports from others."
+              actionHref="/reports/peers"
+              actionLabel="Open peer reports"
             />
           )
           : (
@@ -405,7 +405,7 @@ export default async function NotificationsPage() {
 
                     <Link
                       href={
-                        `/reports#report-${response.report.id}`
+                        `/reports/my#report-${response.report.id}`
                       }
                       className="app-button-primary mt-4 inline-flex no-underline"
                     >

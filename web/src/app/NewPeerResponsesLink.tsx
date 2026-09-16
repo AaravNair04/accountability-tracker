@@ -32,7 +32,7 @@ export default async function NewPeerResponsesLink({
 
 
   return (
-    <Link href="/reports">
+    <Link href="/reports/my">
 
       Peer Responses
 

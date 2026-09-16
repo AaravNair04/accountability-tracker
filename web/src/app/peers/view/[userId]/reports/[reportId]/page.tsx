@@ -214,8 +214,8 @@ export default async function PeerReportPage({
     return (
       <main className="app-page-narrow space-y-6">
         <PageHeader
-          backHref="/inbox"
-          backLabel="← Back to Report Inbox"
+          backHref="/reports/peers"
+          backLabel="← Back to Peer Reports"
           eyebrow="Peer Reports"
           title="Access Denied"
           description="This report was not delivered to your account."
@@ -315,8 +315,8 @@ export default async function PeerReportPage({
   return (
     <main className="app-page-narrow space-y-6">
       <PageHeader
-        backHref="/inbox"
-        backLabel="← Back to Report Inbox"
+        backHref="/reports/peers"
+        backLabel="← Back to Peer Reports"
         eyebrow="Accountability Report"
         title={formatReportDate(
           report.reportDate

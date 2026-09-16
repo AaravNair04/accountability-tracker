@@ -1,107 +1,17 @@
+import Link from "next/link";
 import {
   redirect
 } from "next/navigation";
 
-import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
-import {
-  SiteUsageBreakdown,
-  TrackingIntegrityBreakdown,
-  formatReportDuration
-} from "@/components/ReportBreakdowns";
 import {
   prisma
 } from "@/lib/prisma";
 import {
   createClient
 } from "@/lib/supabase/server";
-import {
-  getUserDisplayName,
-  getUserSecondaryLabel
-} from "@/lib/userDisplay";
 
-function formatDate(
-  date: Date
-) {
-  return date.toLocaleDateString(
-    "en-US",
-    {
-      year:
-        "numeric",
-      month:
-        "long",
-      day:
-        "numeric",
-      timeZone:
-        "UTC"
-    }
-  );
-}
-
-function formatDateTime(
-  date: Date
-) {
-  return date.toLocaleString(
-    "en-US",
-    {
-      dateStyle:
-        "medium",
-      timeStyle:
-        "short"
-    }
-  );
-}
-
-function parseSiteUsage(
-  siteUsage: unknown
-) {
-  return siteUsage &&
-    typeof siteUsage ===
-      "object" &&
-    !Array.isArray(
-      siteUsage
-    )
-    ? siteUsage as Record<string, unknown>
-    : {};
-}
-
-function getTopSites(
-  siteUsage: Record<string, unknown>
-) {
-  return Object.entries(
-    siteUsage
-  )
-    .filter(
-      (entry) =>
-        typeof entry[1] ===
-          "number" &&
-        entry[1] > 0
-    )
-    .map(
-      ([
-        site,
-        seconds
-      ]) => ({
-        site,
-        seconds:
-          seconds as number
-      })
-    )
-    .sort(
-      (
-        first,
-        second
-      ) =>
-        second.seconds -
-        first.seconds
-    )
-    .slice(
-      0,
-      3
-    );
-}
-
-export default async function ReportsPage() {
+export default async function ReportsHomePage() {
   const supabase =
     await createClient();
 
@@ -120,75 +30,70 @@ export default async function ReportsPage() {
     );
   }
 
-  const reports =
-    await prisma.dailyReport.findMany({
-      where: {
-        userId:
-          user.id
-      },
+  const [
+    myReportCount,
+    peerReportCount,
+    unreadPeerReportCount
+  ] =
+    await Promise.all([
+      prisma.dailyReport.count({
+        where: {
+          userId:
+            user.id
+        }
+      }),
 
-      include: {
-        deliveries: {
-          include: {
-            peer: {
-              select: {
-                email:
-                  true,
-                username:
-                  true
+      prisma.reportDelivery.count({
+        where: {
+          peerId:
+            user.id,
+
+          report: {
+            user: {
+              peerRelationships: {
+                some: {
+                  peerId:
+                    user.id,
+
+                  status:
+                    "accepted",
+
+                  revokedAt:
+                    null
+                }
               }
             }
-          },
-
-          orderBy: {
-            createdAt:
-              "asc"
-          }
-        },
-
-        responses: {
-          include: {
-            peer: {
-              select: {
-                id:
-                  true,
-                email:
-                  true,
-                username:
-                  true
-              }
-            }
-          },
-
-          orderBy: {
-            updatedAt:
-              "desc"
           }
         }
-      },
+      }),
 
-      orderBy: {
-        reportDate:
-          "desc"
-      }
-    });
+      prisma.reportDelivery.count({
+        where: {
+          peerId:
+            user.id,
 
-  await prisma.reportResponse.updateMany({
-    where: {
-      ownerViewedAt:
-        null,
+          viewedAt:
+            null,
 
-      report: {
-        userId:
-          user.id
-      }
-    },
+          report: {
+            user: {
+              peerRelationships: {
+                some: {
+                  peerId:
+                    user.id,
 
-    data: {
-      ownerViewedAt:
-        new Date()
-    }
-  });
+                  status:
+                    "accepted",
+
+                  revokedAt:
+                    null
+                }
+              }
+            }
+          }
+        }
+      })
+    ]);
 
   return (
     <main className="app-page-narrow space-y-6">
@@ -196,310 +101,71 @@ export default async function ReportsPage() {
         backHref="/"
         backLabel="← Back to Dashboard"
         eyebrow="Reports"
-        title="Daily Reports"
-        description="Review your historical accountability reports, peer responses, and tracking coverage in one place."
+        title="Reports"
+        description="Choose whether you want to review your own accountability history or reports from peers you support."
       />
 
-      {
-        reports.length ===
-          0
-          ? (
-            <EmptyState
-              title="No daily reports yet"
-              description="Your first report will appear here after tracking data is collected and a daily report is generated."
-              actionHref="/tracked-sites"
-              actionLabel="Check tracked websites"
-            />
-          )
-          : (
-            <div className="space-y-5">
-              {
-                reports.map(
-                  (report) => {
-                    const siteUsage =
-                      parseSiteUsage(
-                        report.siteUsage
-                      );
+      <section className="grid gap-4 md:grid-cols-2">
+        <Link
+          href="/reports/my"
+          className="app-card block no-underline transition hover:border-indigo-200 hover:bg-indigo-50/40 dark:hover:border-indigo-500/30 dark:hover:bg-indigo-500/10"
+        >
+          <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            Your history
+          </p>
 
-                    const topSites =
-                      getTopSites(
-                        siteUsage
-                      );
+          <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+            My Reports
+          </h2>
 
-                    return (
-                      <article
-                        id={
-                          `report-${report.id}`
-                        }
-                        key={report.id}
-                        className="app-card"
-                      >
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                              Accountability report
-                            </p>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Your daily reports, tracking coverage, peer sharing status, and responses.
+          </p>
 
-                            <h2 className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">
-                              {
-                                formatDate(
-                                  report.reportDate
-                                )
-                              }
-                            </h2>
+          <p className="mt-5 text-sm font-semibold text-indigo-700 dark:text-indigo-200">
+            {myReportCount} report{myReportCount === 1 ? "" : "s"}
+          </p>
+        </Link>
 
-                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                              Timezone:{" "}
-                              <strong className="font-semibold text-slate-700 dark:text-slate-200">
-                                {report.timezone}
-                              </strong>
-                            </p>
-                          </div>
+        <Link
+          href="/reports/peers"
+          className="app-card block no-underline transition hover:border-red-200 hover:bg-red-50/40 dark:hover:border-red-500/30 dark:hover:bg-red-500/10"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold uppercase tracking-wide text-red-600 dark:text-red-300">
+              Live feed
+            </p>
 
-                          <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
-                              {
-                                report.responses.length
-                              }{" "}
-                              {
-                                report.responses.length ===
-                                  1
-                                  ? "response"
-                                  : "responses"
-                              }
-                            </span>
+            {
+              unreadPeerReportCount >
+                0 && (
+                <span className="relative flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
+                </span>
+              )
+            }
+          </div>
 
-                            <span className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">
-                              {
-                                formatReportDuration(
-                                  report.totalSeconds
-                                )
-                              }{" "}
-                              total
-                            </span>
-                          </div>
-                        </div>
+          <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+            My Peers&apos; Reports
+          </h2>
 
-                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-                            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                              Total
-                            </p>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Reports from people you are keeping accountable.
+          </p>
 
-                            <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
-                              {
-                                formatReportDuration(
-                                  report.totalSeconds
-                                )
-                              }
-                            </p>
-                          </div>
-
-                          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
-                            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-200">
-                              Active
-                            </p>
-
-                            <p className="mt-2 text-2xl font-bold text-emerald-800 dark:text-emerald-100">
-                              {
-                                formatReportDuration(
-                                  report.activeSeconds
-                                )
-                              }
-                            </p>
-                          </div>
-
-                          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
-                            <p className="text-sm font-semibold text-amber-700 dark:text-amber-200">
-                              Background audio
-                            </p>
-
-                            <p className="mt-2 text-2xl font-bold text-amber-800 dark:text-amber-100">
-                              {
-                                formatReportDuration(
-                                  report.backgroundAudioSeconds
-                                )
-                              }
-                            </p>
-                          </div>
-                        </div>
-
-                        {
-                          topSites.length >
-                            0 && (
-                            <div className="mt-5 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/30">
-                              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                Top sites
-                              </h3>
-
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {
-                                  topSites.map(
-                                    (site) => (
-                                      <span
-                                        key={site.site}
-                                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-                                      >
-                                        {site.site}:{" "}
-                                        {
-                                          formatReportDuration(
-                                            site.seconds
-                                          )
-                                        }
-                                      </span>
-                                    )
-                                  )
-                                }
-                              </div>
-                            </div>
-                          )
-                        }
-
-                        <div className="mt-6 grid gap-5 lg:grid-cols-2">
-                          <section>
-                            <h3 className="mb-3 font-semibold text-slate-950 dark:text-white">
-                              Site breakdown
-                            </h3>
-
-                            <SiteUsageBreakdown
-                              siteUsage={siteUsage}
-                            />
-                          </section>
-
-                          <section>
-                            <h3 className="mb-3 font-semibold text-slate-950 dark:text-white">
-                              Tracking coverage
-                            </h3>
-
-                            <TrackingIntegrityBreakdown
-                              goodSeconds={
-                                report.goodSeconds
-                              }
-                              limitedSeconds={
-                                report.limitedSeconds
-                              }
-                              pausedSeconds={
-                                report.pausedSeconds
-                              }
-                              unknownSeconds={
-                                report.unknownSeconds
-                              }
-                            />
-                          </section>
-                        </div>
-
-                        <section className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div>
-                              <h3 className="font-semibold text-slate-950 dark:text-white">
-                                Peer sharing
-                              </h3>
-
-                              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                {
-                                  report.deliveries.length ===
-                                    0
-                                    ? "This report has not been shared with peers yet."
-                                    : `${report.deliveries.length} peer report link${report.deliveries.length === 1 ? "" : "s"} created. Email sending is paused for now.`
-                                }
-                              </p>
-                            </div>
-                          </div>
-
-                          {
-                            report.deliveries.length >
-                              0 && (
-                              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
-                                <p className="font-semibold">
-                                  Email notifications are turned off
-                                </p>
-
-                                <p className="mt-1">
-                                  Peers can still see shared reports in their report inbox. Resend retries are disabled until a verified sending domain is added.
-                                </p>
-                              </div>
-                            )
-                          }
-                        </section>
-
-                        <section className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
-                          <h3 className="font-semibold text-slate-950 dark:text-white">
-                            Peer responses
-                          </h3>
-
-                          {
-                            report.responses.length ===
-                              0
-                              ? (
-                                <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
-                                  No peer responses yet.
-                                </p>
-                              )
-                              : (
-                                <div className="mt-3 grid gap-3">
-                                  {
-                                    report.responses.map(
-                                      (response) => {
-                                        const peerName =
-                                          getUserDisplayName(
-                                            response.peer
-                                          );
-
-                                        const peerSecondary =
-                                          getUserSecondaryLabel(
-                                            response.peer
-                                          );
-
-                                        return (
-                                          <div
-                                            key={response.id}
-                                            className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
-                                          >
-                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                              <div>
-                                                <strong className="text-slate-950 dark:text-white">
-                                                  {peerName}
-                                                </strong>
-
-                                                {
-                                                  peerSecondary && (
-                                                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                                      {peerSecondary}
-                                                    </p>
-                                                  )
-                                                }
-                                              </div>
-
-                                              <span className="text-sm text-slate-500 dark:text-slate-400">
-                                                Updated{" "}
-                                                {
-                                                  formatDateTime(
-                                                    response.updatedAt
-                                                  )
-                                                }
-                                              </span>
-                                            </div>
-
-                                            <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
-                                              {response.message}
-                                            </p>
-                                          </div>
-                                        );
-                                      }
-                                    )
-                                  }
-                                </div>
-                              )
-                          }
-                        </section>
-                      </article>
-                    );
-                  }
-                )
-              }
-            </div>
-          )
-      }
+          <p className="mt-5 text-sm font-semibold text-red-700 dark:text-red-200">
+            {peerReportCount} report{peerReportCount === 1 ? "" : "s"}
+            {
+              unreadPeerReportCount >
+                0
+                ? `, ${unreadPeerReportCount} unread`
+                : ""
+            }
+          </p>
+        </Link>
+      </section>
     </main>
   );
 }

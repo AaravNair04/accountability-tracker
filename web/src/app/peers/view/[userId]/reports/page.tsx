@@ -185,8 +185,8 @@ export default async function PeerReportsPage({
             <EmptyState
               title="No reports delivered yet"
               description="When this person has a delivered daily report, it will appear here."
-              actionHref="/inbox"
-              actionLabel="Go to Inbox"
+              actionHref="/reports/peers"
+              actionLabel="Open peer reports"
             />
 
           )

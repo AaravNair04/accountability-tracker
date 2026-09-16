@@ -573,7 +573,7 @@ export default async function PeersPage() {
 
 
                                       <p className="mt-2">
-                                        <Link href="/reports">
+                                        <Link href="/reports/my">
                                           View report history
                                         </Link>
                                       </p>

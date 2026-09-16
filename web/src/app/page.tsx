@@ -9,6 +9,10 @@ import PageHeader from "@/components/PageHeader";
 import {
   prisma
 } from "@/lib/prisma";
+import {
+  getUserDisplayName,
+  getUserSecondaryLabel
+} from "@/lib/userDisplay";
 
 import {
   createClient
@@ -230,7 +234,8 @@ export default async function Home() {
     unreadReportCount,
     pendingInvitationCount,
     newPeerResponseCount,
-    sentPendingInvitationCount
+    sentPendingInvitationCount,
+    accountabilityPeers
   ] =
     await Promise.all([
       prisma.reportDelivery.count({
@@ -296,6 +301,40 @@ export default async function Home() {
           revokedAt:
             null
         }
+      }),
+
+      prisma.trustedPeer.findMany({
+        where: {
+          peerId:
+            user.id,
+
+          status:
+            "accepted",
+
+          revokedAt:
+            null
+        },
+
+        include: {
+          owner: {
+            select: {
+              id:
+                true,
+              email:
+                true,
+              username:
+                true
+            }
+          }
+        },
+
+        orderBy: {
+          updatedAt:
+            "desc"
+        },
+
+        take:
+          3
       })
     ]);
 
@@ -605,62 +644,101 @@ export default async function Home() {
       {/* ACCOUNTABILITY */}
 
       <section className="space-y-4">
-        <h2 className="app-section-title">
-          Accountability
-        </h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="app-section-title">
+            Accountability
+          </h2>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="app-card">
-            <h3 className="font-semibold text-slate-950 dark:text-white">
-              My Accountability
-            </h3>
+          <Link
+            href="/reports/peers"
+            className="app-button-primary inline-flex items-center gap-2 self-start no-underline sm:self-auto"
+          >
+            <span className="relative flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
+            </span>
+            Live Feed
+          </Link>
+        </div>
 
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Review your reports and feedback
-              from your accountability peers.
-            </p>
+        <div className="app-card">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="font-semibold text-slate-950 dark:text-white">
+                My Peers
+              </h3>
 
-            <p className="mt-4">
-              <Link href="/reports">
-                My Daily Reports
-              </Link>
-            </p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                People you are keeping accountable.
+              </p>
+            </div>
 
-            <p>
-              <Link href="/tracked-sites">
-                Tracked Websites
-              </Link>
-            </p>
+            <Link
+              href="/peers"
+              className="app-button-secondary inline-flex justify-center no-underline"
+            >
+              View all peers
+            </Link>
           </div>
 
-          <div className="app-card">
-            <h3 className="font-semibold text-slate-950 dark:text-white">
-              My Peers
-            </h3>
+          {
+            accountabilityPeers.length ===
+              0
+              ? (
+                <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+                  No accepted peer relationships yet.
+                </p>
+              )
+              : (
+                <div className="mt-4 grid gap-3">
+                  {
+                    accountabilityPeers.map(
+                      (relationship) => {
+                        const peerName =
+                          getUserDisplayName(
+                            relationship.owner
+                          );
 
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Review reports from people who
-              trust you to hold them accountable.
-            </p>
+                        const peerSecondary =
+                          getUserSecondaryLabel(
+                            relationship.owner
+                          );
 
-            <p className="mt-4">
-              <Link href="/inbox">
-                Report Inbox
-                {
-                  unreadReportCount >
-                  0
-                    ? ` (${unreadReportCount} unread)`
-                    : ""
-                }
-              </Link>
-            </p>
+                        return (
+                          <div
+                            key={relationship.id}
+                            className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div>
+                              <p className="font-semibold text-slate-950 dark:text-white">
+                                {peerName}
+                              </p>
 
-            <p>
-              <Link href="/peers">
-                Add and View Peers
-              </Link>
-            </p>
-          </div>
+                              {
+                                peerSecondary && (
+                                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                    {peerSecondary}
+                                  </p>
+                                )
+                              }
+                            </div>
+
+                            <Link
+                              href={
+                                `/peers/view/${relationship.owner.id}`
+                              }
+                              className="app-button-secondary inline-flex justify-center no-underline"
+                            >
+                              View accountability
+                            </Link>
+                          </div>
+                        );
+                      }
+                    )
+                  }
+                </div>
+              )
+          }
         </div>
       </section>
 
