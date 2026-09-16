@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Activity, ArrowRight, Bell, ChartNoAxesCombined, Clock3, Focus, Users, Zap } from "lucide-react";
+import MetricCard from "@/components/MetricCard";
 
 import {
   redirect
@@ -539,13 +541,14 @@ export default async function Home() {
     <main className="app-page space-y-8">
       <PageHeader
         eyebrow="Dashboard"
-        title="Accountability Tracker"
-        description={`Logged in as ${user.email} in ${profile.timezone}.`}
+        title="Your day, in focus"
+        description={new Intl.DateTimeFormat("en-US", { timeZone: profile.timezone, weekday: "long", month: "long", day: "numeric" }).format(new Date()) + ` · ${profile.timezone}`}
         action={
           <Link
             href="/notifications"
-            className="inline-flex items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 no-underline hover:bg-indigo-100 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+            className="app-button-secondary"
           >
+            <Bell aria-hidden="true" className="size-4" />
             Notifications
             {
               notificationCount > 0
@@ -559,11 +562,13 @@ export default async function Home() {
       {/* ACCOUNTABILITY */}
 
       <section className="space-y-4">
-        <h2 className="app-section-title">
-          Accountability
-        </h2>
+        <div className="section-heading">
+          <Users aria-hidden="true" className="section-icon" />
+          <h2 className="app-section-title">Accountability</h2>
+          <span className="text-sm text-slate-500 dark:text-slate-400">{accountabilityPeers.length} {accountabilityPeers.length === 1 ? "peer" : "peers"}</span>
+        </div>
 
-        <div className="app-card">
+        <div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="font-semibold text-slate-950 dark:text-white">
@@ -579,7 +584,7 @@ export default async function Home() {
               href="/peers"
               className="app-button-secondary inline-flex justify-center no-underline"
             >
-              View all peers
+              View all peers <ArrowRight aria-hidden="true" className="size-4" />
             </Link>
           </div>
 
@@ -587,12 +592,12 @@ export default async function Home() {
             accountabilityPeers.length ===
               0
               ? (
-                <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+                <p className="app-card-muted mt-4 text-sm text-slate-500 dark:text-slate-400">
                   No accepted peer relationships yet.
                 </p>
               )
               : (
-                <div className="mt-4 grid gap-3">
+                <div className="mt-4 border-t border-slate-200 dark:border-slate-800">
                   {
                     accountabilityPeers.map(
                       (relationship) => {
@@ -609,9 +614,11 @@ export default async function Home() {
                         return (
                           <div
                             key={relationship.id}
-                            className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40 sm:flex-row sm:items-center sm:justify-between"
+                            className="peer-row"
                           >
-                            <div>
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span aria-hidden="true" className="peer-avatar">{peerName.replace(/^@/, "").slice(0, 2).toUpperCase()}</span>
+                              <div className="min-w-0">
                               <p className="font-semibold text-slate-950 dark:text-white">
                                 {peerName}
                               </p>
@@ -623,6 +630,7 @@ export default async function Home() {
                                   </p>
                                 )
                               }
+                              </div>
                             </div>
 
                             <Link
@@ -648,97 +656,19 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Today&apos;s total
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
-            {
-              formatDuration(
-                totalSeconds
-              )
-            }
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            All tracked activity
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Active time
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-emerald-600 dark:text-emerald-300">
-            {
-              formatDuration(
-                activeSeconds
-              )
-            }
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Focused foreground use
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Distractions
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-red-600 dark:text-red-300">
-            {shortActiveDistractionCount}
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Short active bursts
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Tracking status
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
-            {current.status}
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {
-              current.device
-                ? current.device.name
-                : "No linked device"
-            }
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Needs attention
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-indigo-600 dark:text-indigo-300">
-            {notificationCount}
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Peer and report updates
-          </p>
-        </div>
+      <section aria-label="Today's activity summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard label="Today's total" value={formatDuration(totalSeconds)} detail="All tracked activity" icon={Clock3} tone="blue" />
+        <MetricCard label="Active time" value={formatDuration(activeSeconds)} detail="Focused foreground use" icon={Focus} tone="teal" />
+        <MetricCard label="Distractions" value={shortActiveDistractionCount} detail="Short active bursts" icon={Zap} tone="rose" />
+        <MetricCard label="Tracking status" value={current.status} detail={current.device?.name ?? "No linked device"} icon={Activity} />
+        <MetricCard label="Needs attention" value={notificationCount} detail="Peer and report updates" icon={Bell} tone="amber" />
       </section>
 
 
       {/* CURRENT STATUS */}
 
       <section className="space-y-4">
-        <h2 className="app-section-title">
-          Current Tracking Status
-        </h2>
+        <div className="section-heading"><Activity aria-hidden="true" className="section-icon" /><h2 className="app-section-title">Current Tracking Status</h2></div>
 
         <div className="app-card">
           <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -791,9 +721,7 @@ export default async function Home() {
 
       <section className="space-y-4">
         <div>
-          <h2 className="app-section-title">
-            Today&apos;s Tracking Coverage
-          </h2>
+          <div className="section-heading"><ChartNoAxesCombined aria-hidden="true" className="section-icon" /><h2 className="app-section-title">Today&apos;s Tracking Coverage</h2></div>
 
           <div className="mt-3 grid gap-2 text-sm text-slate-500 dark:text-slate-400 sm:grid-cols-2">
             <p>
@@ -856,7 +784,8 @@ export default async function Home() {
                   key={
                     label as string
                   }
-                  className="app-card"
+                  className="metric-card"
+                  data-tone={label === "Good" ? "teal" : label === "Limited" ? "amber" : label === "Paused" ? "blue" : undefined}
                 >
                   <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                     {label}
@@ -878,6 +807,7 @@ export default async function Home() {
                       )
                     }
                   </p>
+                  <div className="coverage-meter" aria-hidden="true"><span style={{ width: formatPercentage(seconds as number, totalCoverage) }} /></div>
                 </div>
               )
             )

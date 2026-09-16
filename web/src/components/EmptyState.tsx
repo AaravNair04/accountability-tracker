@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, Sprout } from "lucide-react";
 
 type EmptyStateProps = {
   title: string;
@@ -17,20 +18,8 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="app-card-muted text-center">
-      <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-        >
-          <path d="M12 5v14" />
-          <path d="M5 12h14" />
-        </svg>
+      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
+        <Sprout aria-hidden="true" className="size-6" />
       </div>
 
       <h3 className="mt-3 font-semibold text-slate-950 dark:text-white">
@@ -49,6 +38,7 @@ export default function EmptyState({
             className="app-button-primary mt-4 inline-flex no-underline"
           >
             {actionLabel}
+            <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         )
       }

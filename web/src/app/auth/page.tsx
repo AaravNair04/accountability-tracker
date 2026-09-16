@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight, Fingerprint } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -93,14 +95,15 @@ export default function AuthPage() {
 
       <div className="w-full max-w-md">
 
-        <div className="app-card p-8">
+        <div className="app-card border-t-4 border-t-indigo-600 p-6 sm:p-8">
 
-          <h1 className="mb-2 text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-            Accountability Tracker
+          <span className="mb-6 flex size-12 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300"><Fingerprint aria-hidden="true" className="size-7" /></span>
+          <h1 className="mb-2 text-2xl font-semibold tracking-normal text-slate-950 dark:text-white">
+            Welcome back
           </h1>
 
           <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-            Sign up or log in
+            Log in to your accountability space.
           </p>
 
 
@@ -108,11 +111,13 @@ export default function AuthPage() {
 
             <div>
 
-              <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <label htmlFor="email" className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Email
               </label>
 
               <input
+                id="email"
+                autoComplete="email"
                 type="email"
                 value={email}
                 onChange={
@@ -131,11 +136,12 @@ export default function AuthPage() {
 
             <div>
 
-              <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <label htmlFor="password" className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Password
               </label>
 
               <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={
@@ -163,6 +169,7 @@ export default function AuthPage() {
                 {loading
                   ? "Please wait..."
                   : "Log In"}
+                <ArrowRight aria-hidden="true" className="size-4" />
               </button>
 
 

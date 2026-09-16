@@ -18,8 +18,8 @@ export default function PageHeader({
   action
 }: PageHeaderProps) {
   return (
-    <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div>
+    <section className="page-header">
+      <div className="min-w-0">
         {
           backHref && (
             <Link
@@ -36,7 +36,7 @@ export default function PageHeader({
             <p
               className={
                 [
-                  "text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300",
+                  "text-xs font-semibold text-indigo-600 dark:text-indigo-300",
                   backHref
                     ? "mt-4"
                     : ""
@@ -50,13 +50,13 @@ export default function PageHeader({
           )
         }
 
-        <h1 className="mt-2 text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
+        <h1 className="mt-2 text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl dark:text-white">
           {title}
         </h1>
 
         {
           description && (
-            <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">
               {description}
             </p>
           )
@@ -65,7 +65,7 @@ export default function PageHeader({
 
       {
         action && (
-          <div className="shrink-0">
+          <div className="flex flex-wrap gap-2 sm:max-w-xs sm:shrink-0">
             {action}
           </div>
         )
