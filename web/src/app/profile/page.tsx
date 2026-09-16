@@ -10,6 +10,11 @@ import {
 import {
   createClient
 } from "@/lib/supabase/server";
+import {
+  getUserDisplayName,
+  getUserInitials,
+  getUserSecondaryLabel
+} from "@/lib/userDisplay";
 
 function formatDate(
   date: Date,
@@ -25,35 +30,6 @@ function formatDate(
   ).format(
     date
   );
-}
-
-function getInitials(
-  email: string
-) {
-  const localPart =
-    email.split(
-      "@"
-    )[0] ??
-    "";
-
-  return localPart
-    .split(
-      /[._-]+/
-    )
-    .filter(Boolean)
-    .slice(
-      0,
-      2
-    )
-    .map(
-      (part) =>
-        part[0]?.toUpperCase()
-    )
-    .join(
-      ""
-    ) ||
-    email[0]?.toUpperCase() ||
-    "U";
 }
 
 function getMetadataString(
@@ -115,6 +91,9 @@ export default async function ProfilePage() {
 
       select: {
         email:
+          true,
+
+        username:
           true,
 
         createdAt:
@@ -214,15 +193,25 @@ export default async function ProfilePage() {
     ]);
 
   const displayName =
-    getMetadataString(
-      user.user_metadata?.full_name
-    ) ||
-    getMetadataString(
-      user.user_metadata?.name
-    ) ||
-    profile.email.split(
-      "@"
-    )[0];
+    profile.username
+      ? getUserDisplayName(
+          profile
+        )
+      : getMetadataString(
+          user.user_metadata?.full_name
+        ) ||
+        getMetadataString(
+          user.user_metadata?.name
+        ) ||
+        getUserDisplayName(
+          profile
+        );
+
+  const secondaryLabel =
+    getUserSecondaryLabel(
+      profile
+    ) ??
+    profile.email;
 
   return (
     <main className="app-page-narrow space-y-6">
@@ -246,8 +235,8 @@ export default async function ProfilePage() {
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xl font-bold text-white shadow-sm dark:bg-indigo-500">
             {
-              getInitials(
-                profile.email
+              getUserInitials(
+                profile
               )
             }
           </div>
@@ -262,7 +251,7 @@ export default async function ProfilePage() {
             </h1>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {profile.email}
+              {secondaryLabel}
             </p>
           </div>
         </div>
@@ -333,6 +322,20 @@ export default async function ProfilePage() {
           </h2>
 
           <dl className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+            <div className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-2">
+              <dt className="font-semibold text-slate-500 dark:text-slate-400">
+                Username
+              </dt>
+
+              <dd className="text-slate-800 dark:text-slate-100">
+                {
+                  profile.username
+                    ? `@${profile.username}`
+                    : "Not set"
+                }
+              </dd>
+            </div>
+
             <div className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-2">
               <dt className="font-semibold text-slate-500 dark:text-slate-400">
                 Email

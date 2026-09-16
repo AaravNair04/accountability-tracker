@@ -9,6 +9,10 @@ import {
 } from "@/components/ReportBreakdowns";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getUserDisplayName,
+  getUserSecondaryLabel
+} from "@/lib/userDisplay";
 
 import ReportResponseForm from "./ReportResponseForm";
 
@@ -101,8 +105,12 @@ export default async function PeerReportPage({
 
         owner: {
           select: {
-            id: true,
-            email: true
+            id:
+              true,
+            email:
+              true,
+            username:
+              true
           }
         }
 
@@ -290,6 +298,15 @@ export default async function PeerReportPage({
         >
       : {};
 
+  const ownerName =
+    getUserDisplayName(
+      relationship.owner
+    );
+
+  const ownerSecondary =
+    getUserSecondaryLabel(
+      relationship.owner
+    );
 
   // --------------------------------------------------
   // RENDER PAGE
@@ -304,7 +321,11 @@ export default async function PeerReportPage({
         title={formatReportDate(
           report.reportDate
         )}
-        description={`Shared by ${relationship.owner.email}. Timezone: ${report.timezone}.`}
+        description={
+          ownerSecondary
+            ? `Shared by ${ownerName} (${ownerSecondary}). Timezone: ${report.timezone}.`
+            : `Shared by ${ownerName}. Timezone: ${report.timezone}.`
+        }
         action={
           <Link
             href={`/peers/view/${userId}/reports`}

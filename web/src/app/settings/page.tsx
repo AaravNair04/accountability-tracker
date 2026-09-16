@@ -9,6 +9,7 @@ import DataExportSettings from "./DataExportSettings";
 import DataRetentionSettings from "./DataRetentionSettings";
 import DeleteTrackingHistorySettings from "./DeleteTrackingHistorySettings";
 import TimezoneSettings from "./TimezoneSettings";
+import UsernameSettings from "./UsernameSettings";
 
 
 export default async function SettingsPage() {
@@ -41,6 +42,9 @@ export default async function SettingsPage() {
         },
 
         select: {
+          username:
+            true,
+
           timezone:
             true,
 
@@ -89,9 +93,14 @@ export default async function SettingsPage() {
         backLabel="← Back to Dashboard"
         eyebrow="Account"
         title="Settings"
-        description="Manage timezone, exports, data retention, deletion controls, and audit history."
+        description="Manage username, timezone, exports, data retention, deletion controls, and audit history."
       />
 
+      <UsernameSettings
+        currentUsername={
+          profile.username
+        }
+      />
 
       <TimezoneSettings
         currentTimezone={

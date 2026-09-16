@@ -10,6 +10,10 @@ import {
 } from "@/components/ReportBreakdowns";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getUserDisplayName,
+  getUserSecondaryLabel
+} from "@/lib/userDisplay";
 
 
 type Props = {
@@ -85,8 +89,12 @@ export default async function PeerReportsPage({
 
         owner: {
           select: {
-            id: true,
-            email: true
+            id:
+              true,
+            email:
+              true,
+            username:
+              true
           }
         }
 
@@ -146,6 +154,15 @@ export default async function PeerReportsPage({
 
     });
 
+  const ownerName =
+    getUserDisplayName(
+      relationship.owner
+    );
+
+  const ownerSecondary =
+    getUserSecondaryLabel(
+      relationship.owner
+    );
 
   return (
     <main className="app-page-narrow space-y-6">
@@ -154,7 +171,11 @@ export default async function PeerReportsPage({
         backLabel="← Back to Peer Overview"
         eyebrow="Peer Reports"
         title="Accountability Reports"
-        description={`Reports for ${relationship.owner.email}.`}
+        description={
+          ownerSecondary
+            ? `Reports for ${ownerName} (${ownerSecondary}).`
+            : `Reports for ${ownerName}.`
+        }
       />
 
 

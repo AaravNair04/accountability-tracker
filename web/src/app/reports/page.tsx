@@ -16,6 +16,10 @@ import {
 import {
   createClient
 } from "@/lib/supabase/server";
+import {
+  getUserDisplayName,
+  getUserSecondaryLabel
+} from "@/lib/userDisplay";
 
 function formatDate(
   date: Date
@@ -130,6 +134,8 @@ export default async function ReportsPage() {
             peer: {
               select: {
                 email:
+                  true,
+                username:
                   true
               }
             }
@@ -148,6 +154,8 @@ export default async function ReportsPage() {
                 id:
                   true,
                 email:
+                  true,
+                username:
                   true
               }
             }
@@ -448,15 +456,22 @@ export default async function ReportsPage() {
                                 <ul className="mt-2 space-y-1">
                                   {
                                     failedDeliveries.map(
-                                      (delivery) => (
-                                        <li key={delivery.id}>
-                                          {delivery.peer.email}:{" "}
-                                          {
-                                            delivery.emailFailureReason ??
-                                            "Email send failed."
-                                          }
-                                        </li>
-                                      )
+                                      (delivery) => {
+                                        const peerName =
+                                          getUserDisplayName(
+                                            delivery.peer
+                                          );
+
+                                        return (
+                                          <li key={delivery.id}>
+                                            {peerName}:{" "}
+                                            {
+                                              delivery.emailFailureReason ??
+                                              "Email send failed."
+                                            }
+                                          </li>
+                                        );
+                                      }
                                     )
                                   }
                                 </ul>
@@ -482,31 +497,53 @@ export default async function ReportsPage() {
                                 <div className="mt-3 grid gap-3">
                                   {
                                     report.responses.map(
-                                      (response) => (
-                                        <div
-                                          key={response.id}
-                                          className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
-                                        >
-                                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                            <strong className="text-slate-950 dark:text-white">
-                                              {response.peer.email}
-                                            </strong>
+                                      (response) => {
+                                        const peerName =
+                                          getUserDisplayName(
+                                            response.peer
+                                          );
 
-                                            <span className="text-sm text-slate-500 dark:text-slate-400">
-                                              Updated{" "}
-                                              {
-                                                formatDateTime(
-                                                  response.updatedAt
-                                                )
-                                              }
-                                            </span>
+                                        const peerSecondary =
+                                          getUserSecondaryLabel(
+                                            response.peer
+                                          );
+
+                                        return (
+                                          <div
+                                            key={response.id}
+                                            className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                                          >
+                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                              <div>
+                                                <strong className="text-slate-950 dark:text-white">
+                                                  {peerName}
+                                                </strong>
+
+                                                {
+                                                  peerSecondary && (
+                                                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                                      {peerSecondary}
+                                                    </p>
+                                                  )
+                                                }
+                                              </div>
+
+                                              <span className="text-sm text-slate-500 dark:text-slate-400">
+                                                Updated{" "}
+                                                {
+                                                  formatDateTime(
+                                                    response.updatedAt
+                                                  )
+                                                }
+                                              </span>
+                                            </div>
+
+                                            <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
+                                              {response.message}
+                                            </p>
                                           </div>
-
-                                          <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
-                                            {response.message}
-                                          </p>
-                                        </div>
-                                      )
+                                        );
+                                      }
                                     )
                                   }
                                 </div>

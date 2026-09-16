@@ -5,6 +5,10 @@ import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getUserDisplayName,
+  getUserSecondaryLabel
+} from "@/lib/userDisplay";
 
 import PeerInviteForm from "./PeerInviteForm";
 import PeerResponseButtons from "./PeerResponseButtons";
@@ -267,7 +271,18 @@ export default async function PeersPage() {
 
                 {
                   receivedInvitations.map(
-                    (relationship) => (
+                    (relationship) => {
+                      const ownerName =
+                        getUserDisplayName(
+                          relationship.owner
+                        );
+
+                      const ownerSecondary =
+                        getUserSecondaryLabel(
+                          relationship.owner
+                        );
+
+                      return (
 
                       <div
                         key={
@@ -277,13 +292,16 @@ export default async function PeersPage() {
                       >
 
                         <strong className="text-slate-950 dark:text-white">
-                          {
-                            relationship
-                              .owner
-                              .email
-                          }
+                          {ownerName}
                         </strong>
 
+                        {
+                          ownerSecondary && (
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                              {ownerSecondary}
+                            </p>
+                          )
+                        }
 
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                           Status:{" "}
@@ -366,7 +384,8 @@ export default async function PeersPage() {
 
                       </div>
 
-                    )
+                      );
+                    }
                   )
                 }
 
@@ -402,6 +421,16 @@ export default async function PeersPage() {
                 {
                   sentInvitations.map(
                     (relationship) => {
+                      const peerName =
+                        getUserDisplayName(
+                          relationship.peer
+                        );
+
+                      const peerSecondary =
+                        getUserSecondaryLabel(
+                          relationship.peer
+                        );
+
                       const latestDelivery =
                         latestDeliveryByPeerId.get(
                           relationship.peerId
@@ -427,13 +456,16 @@ export default async function PeersPage() {
                       >
 
                         <strong className="text-slate-950 dark:text-white">
-                          {
-                            relationship
-                              .peer
-                              .email
-                          }
+                          {peerName}
                         </strong>
 
+                        {
+                          peerSecondary && (
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                              {peerSecondary}
+                            </p>
+                          )
+                        }
 
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                           Status:{" "}

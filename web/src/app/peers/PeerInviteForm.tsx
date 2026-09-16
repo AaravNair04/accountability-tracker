@@ -17,8 +17,8 @@ export default function PeerInviteForm() {
 
 
   const [
-    email,
-    setEmail
+    peerIdentifier,
+    setPeerIdentifier
   ] =
     useState("");
 
@@ -44,9 +44,9 @@ export default function PeerInviteForm() {
     event.preventDefault();
 
 
-    if (!email.trim()) {
+    if (!peerIdentifier.trim()) {
       setMessage(
-        "Please enter an email."
+        "Please enter an email or username."
       );
 
       return;
@@ -73,7 +73,7 @@ export default function PeerInviteForm() {
 
             body:
               JSON.stringify({
-                email
+                peerIdentifier
               })
           }
         );
@@ -100,7 +100,7 @@ export default function PeerInviteForm() {
       );
 
 
-      setEmail("");
+      setPeerIdentifier("");
 
 
       // Refresh server data.
@@ -138,21 +138,21 @@ export default function PeerInviteForm() {
         htmlFor="peerEmail"
         className="block text-sm font-semibold text-slate-700 dark:text-slate-200"
       >
-        Peer&apos;s email
+        Peer&apos;s email or username
       </label>
 
 
       <input
         id="peerEmail"
-        type="email"
-        value={email}
+        type="text"
+        value={peerIdentifier}
         onChange={
           (event) =>
-            setEmail(
+            setPeerIdentifier(
               event.target.value
             )
         }
-        placeholder="friend@example.com"
+        placeholder="friend@example.com or @friend"
         disabled={loading}
         className="w-full rounded-lg border px-4 py-3"
       />

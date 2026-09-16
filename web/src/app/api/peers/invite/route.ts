@@ -80,25 +80,40 @@ export async function POST(
     }
 
 
-    // Read the peer email.
+    // Read the peer email or username.
     const body =
       await request.json();
 
 
-    const email =
-      typeof body.email === "string"
-        ? body.email
+    const peerIdentifier =
+      typeof body.peerIdentifier ===
+        "string"
+        ? body.peerIdentifier
             .trim()
             .toLowerCase()
-        : "";
+        : typeof body.email ===
+          "string"
+          ? body.email
+              .trim()
+              .toLowerCase()
+          : "";
+
+    const normalizedUsername =
+      peerIdentifier.startsWith(
+        "@"
+      )
+        ? peerIdentifier.slice(
+            1
+          )
+        : peerIdentifier;
 
 
-    if (!email) {
+    if (!peerIdentifier) {
 
       return NextResponse.json(
         {
           error:
-            "Email is required."
+            "Email or username is required."
         },
         {
           status: 400
@@ -135,13 +150,28 @@ export async function POST(
 
     // Find the person being invited.
     const peer =
-      await prisma.user.findUnique({
+      peerIdentifier.includes(
+        "@"
+      ) &&
+      !peerIdentifier.startsWith(
+        "@"
+      )
+        ? await prisma.user.findUnique({
 
-        where: {
-          email
-        }
+            where: {
+              email:
+                peerIdentifier
+            }
 
-      });
+          })
+        : await prisma.user.findUnique({
+
+            where: {
+              username:
+                normalizedUsername
+            }
+
+          });
 
 
     if (!peer) {
@@ -149,7 +179,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "No registered user was found with that email."
+            "No registered user was found with that email or username."
         },
         {
           status: 404

@@ -4,6 +4,8 @@ import {
   redirect
 } from "next/navigation";
 
+import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
 import {
   prisma
 } from "@/lib/prisma";
@@ -27,6 +29,10 @@ import {
   MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS,
   groupContinuousUsageSessions
 } from "@/lib/usage/activitySegments";
+import {
+  getUserDisplayName,
+  getUserSecondaryLabel
+} from "@/lib/userDisplay";
 
 
 type PageProps = {
@@ -94,24 +100,87 @@ function formatPercentage(
 }
 
 
-function formatDateTime(
-  date: Date,
+function formatTimeRange(
+  start: Date,
+  end: Date,
   timeZone: string
 ) {
-  return new Intl.DateTimeFormat(
+  const formatter =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone,
+        timeStyle:
+          "short"
+      }
+    );
+
+  return `${formatter.format(
+    start
+  )} - ${formatter.format(
+    end
+  )}`;
+}
+
+
+function formatReportDate(
+  date: Date
+) {
+  return date.toLocaleDateString(
     "en-US",
     {
-      timeZone,
-
-      dateStyle:
-        "medium",
-
-      timeStyle:
-        "medium"
+      year:
+        "numeric",
+      month:
+        "long",
+      day:
+        "numeric",
+      timeZone:
+        "UTC"
     }
-  ).format(
-    date
   );
+}
+
+
+function getActivityTypeLabel(
+  type: string
+) {
+  if (
+    type ===
+    "background_audio"
+  ) {
+    return "Background audio";
+  }
+
+  if (
+    type ===
+    "active"
+  ) {
+    return "Active";
+  }
+
+  return type;
+}
+
+
+function getActivityTypeClassName(
+  type: string
+) {
+  if (
+    type ===
+    "active"
+  ) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200";
+  }
+
+  if (
+    type ===
+    "background_audio"
+  ) {
+    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
 }
 
 
@@ -160,6 +229,9 @@ export default async function PeerViewPage({
               true,
 
             email:
+              true,
+
+            username:
               true,
 
             timezone:
@@ -220,7 +292,8 @@ export default async function PeerViewPage({
   const [
     sessions,
     coverage,
-    current
+    current,
+    recentReports
   ] =
     await Promise.all([
       prisma.usageSession.findMany({
@@ -253,8 +326,39 @@ export default async function PeerViewPage({
       getCurrentTrackingStatus(
         userId,
         now
-      )
+      ),
+
+      prisma.dailyReport.findMany({
+        where: {
+          userId,
+
+          deliveries: {
+            some: {
+              peerId:
+                user.id
+            }
+          }
+        },
+
+        orderBy: {
+          reportDate:
+            "desc"
+        },
+
+        take:
+          5
+      })
     ]);
+
+  const ownerName =
+    getUserDisplayName(
+      owner
+    );
+
+  const ownerSecondary =
+    getUserSecondaryLabel(
+      owner
+    );
 
   const clippedSessions =
     sessions
@@ -384,87 +488,93 @@ export default async function PeerViewPage({
 
   return (
     <main className="app-page space-y-8">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link href="/peers">
-            ← Back to Peers
+      <PageHeader
+        backHref="/peers"
+        backLabel="← Back to Peers"
+        eyebrow="Accountability View"
+        title={ownerName}
+        description={
+          ownerSecondary
+            ? `${ownerSecondary} · ${owner.timezone}`
+            : `You are holding this person accountable in ${owner.timezone}.`
+        }
+        action={
+          <Link
+            href={`/peers/view/${userId}/reports`}
+            className="app-button-primary inline-flex no-underline"
+          >
+            View Daily Reports
           </Link>
+        }
+      />
 
-          <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-            Accountability View
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Today&apos;s total
           </p>
-
-          <h1 className="mt-2 text-3xl font-bold tracking-normal text-slate-950 dark:text-white">
-            {owner.email}
-          </h1>
-
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            You are holding this person accountable in{" "}
-            <strong className="font-semibold text-slate-700 dark:text-slate-200">
-              {owner.timezone}
-            </strong>
-            .
+          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+            {formatDuration(
+              totalSeconds
+            )}
+          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            All tracked activity
           </p>
         </div>
 
-        <Link
-          href={
-            `/peers/view/${userId}/reports`
-          }
-          className="inline-flex items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 no-underline hover:bg-indigo-100 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
-        >
-          View Daily Reports
-        </Link>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="app-section-title">
-          Current Tracking Status
-        </h2>
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Active time
+          </p>
+          <p className="mt-3 text-2xl font-bold text-emerald-600 dark:text-emerald-300">
+            {formatDuration(
+              activeSeconds
+            )}
+          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Focused foreground use
+          </p>
+        </div>
 
         <div className="app-card">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            <strong>
-              Status:
-            </strong>{" "}
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Distractions
+          </p>
+          <p className="mt-3 text-2xl font-bold text-red-600 dark:text-red-300">
+            {shortActiveDistractionCount}
+          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Short active bursts
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Tracking status
+          </p>
+          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
             {current.status}
           </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {
+              current.device
+                ? current.device.name
+                : "No linked device"
+            }
+          </p>
+        </div>
 
-          {
-            current.device
-              ? (
-                <>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                    <strong>
-                      Device:
-                    </strong>{" "}
-                    {
-                      current.device.name
-                    }
-                  </p>
-
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                    <strong>
-                      Last seen:
-                    </strong>{" "}
-                    {
-                      current.device.lastSeenAt
-                        ? formatDateTime(
-                            current.device.lastSeenAt,
-                            owner.timezone
-                          )
-                        : "Never"
-                    }
-                  </p>
-                </>
-              )
-              : (
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  No confirmed, non-revoked
-                  tracking device found.
-                </p>
-              )
-          }
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Delivered reports
+          </p>
+          <p className="mt-3 text-2xl font-bold text-indigo-600 dark:text-indigo-300">
+            {recentReports.length}
+          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Latest shared history
+          </p>
         </div>
       </section>
 
@@ -560,7 +670,7 @@ export default async function PeerViewPage({
             }
           </p>
 
-          <p className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <p className="rounded-lg border border-amber-100 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
             <strong>
               Background audio:
             </strong>{" "}
@@ -644,70 +754,142 @@ export default async function PeerViewPage({
           recentActivitySegments.length ===
             0
             ? (
-              <p className="app-card-muted text-sm text-slate-500 dark:text-slate-400">
-                No activity blocks over 3 minutes today.
-              </p>
+              <EmptyState
+                title="No readable activity blocks yet"
+                description="Once a tracked site stays active for 3 minutes or more, it appears here."
+              />
             )
             : (
-              recentActivitySegments.map(
-                (segment) => (
-                  <article
-                    key={
-                      segment.id
-                    }
-                    className="app-card"
-                  >
-                    <strong className="text-slate-950 dark:text-white">
-                      {segment.site}
-                    </strong>
+              <div className="grid gap-3">
+                {
+                  recentActivitySegments.map(
+                    (segment) => (
+                      <article
+                        key={segment.id}
+                        className="app-card flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+                      >
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <strong className="text-slate-950 dark:text-white">
+                              {segment.site}
+                            </strong>
 
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                      Type:{" "}
-                      {segment.type}
-                    </p>
+                            <span
+                              className={
+                                [
+                                  "rounded-full border px-2.5 py-1 text-xs font-semibold",
+                                  getActivityTypeClassName(
+                                    segment.type
+                                  )
+                                ].join(
+                                  " "
+                                )
+                              }
+                            >
+                              {getActivityTypeLabel(
+                                segment.type
+                              )}
+                            </span>
+                          </div>
 
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Duration:{" "}
-                      {
-                        formatDuration(
-                          segment.durationSeconds
-                        )
-                      }
-                    </p>
+                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            {formatTimeRange(
+                              segment.startTime,
+                              segment.endTime,
+                              owner.timezone
+                            )}
+                          </p>
 
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Started:{" "}
-                      {
-                        formatDateTime(
-                          segment.startTime,
-                          owner.timezone
-                        )
-                      }
-                    </p>
+                          {
+                            segment.sessionCount >
+                              1 && (
+                              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                Combined from {segment.sessionCount} continuous sessions
+                              </p>
+                            )
+                          }
+                        </div>
 
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Ended:{" "}
-                      {
-                        formatDateTime(
-                          segment.endTime,
-                          owner.timezone
-                        )
-                      }
-                    </p>
-
-                    {
-                      segment.sessionCount >
-                        1 && (
-                        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                          Combined from{" "}
-                          {segment.sessionCount}{" "}
-                          continuous sessions
+                        <p className="text-2xl font-bold text-slate-950 dark:text-white">
+                          {formatDuration(
+                            segment.durationSeconds
+                          )}
                         </p>
-                      )
+                      </article>
+                    )
+                  )
+                }
+              </div>
+            )
+        }
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="app-section-title">
+          Recent Daily Reports
+        </h2>
+
+        {
+          recentReports.length ===
+            0
+            ? (
+              <EmptyState
+                title="No reports delivered yet"
+                description={`${ownerName} has not shared a completed daily report with you yet.`}
+              />
+            )
+            : (
+              <div className="grid gap-3">
+                {
+                  recentReports.map(
+                    (report) => {
+                      const reportCoverageTotal =
+                        report.goodSeconds +
+                        report.limitedSeconds +
+                        report.pausedSeconds +
+                        report.unknownSeconds;
+
+                      return (
+                        <article
+                          key={report.id}
+                          className="app-card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
+                              {formatReportDate(
+                                report.reportDate
+                              )}
+                            </h3>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                              Total:{" "}
+                              <strong className="text-slate-700 dark:text-slate-200">
+                                {formatDuration(
+                                  report.totalSeconds
+                                )}
+                              </strong>
+                              {" · "}
+                              Good tracking:{" "}
+                              <strong className="text-slate-700 dark:text-slate-200">
+                                {formatPercentage(
+                                  report.goodSeconds,
+                                  reportCoverageTotal
+                                )}
+                              </strong>
+                            </p>
+                          </div>
+
+                          <Link
+                            href={`/peers/view/${userId}/reports/${report.id}`}
+                            className="app-button-secondary inline-flex justify-center no-underline"
+                          >
+                            Open Report
+                          </Link>
+                        </article>
+                      );
                     }
-                  </article>
-                )
-              )
+                  )
+                }
+              </div>
             )
         }
       </section>
