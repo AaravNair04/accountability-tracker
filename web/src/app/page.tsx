@@ -7,6 +7,9 @@ import {
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
 import {
+  TrackingIntegrityLegend
+} from "@/components/ReportBreakdowns";
+import {
   prisma
 } from "@/lib/prisma";
 import {
@@ -851,6 +854,8 @@ export default async function Home() {
             )
           }
         </div>
+
+        <TrackingIntegrityLegend />
       </section>
 
 

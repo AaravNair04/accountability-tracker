@@ -5,6 +5,10 @@ import {
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
 import {
+  TrackingIntegrityBreakdown,
+  TrackingIntegrityLegend
+} from "@/components/ReportBreakdowns";
+import {
   prisma
 } from "@/lib/prisma";
 import {
@@ -533,6 +537,8 @@ export default async function PeerPreviewPage() {
             )
           }
         </div>
+
+        <TrackingIntegrityLegend />
       </section>
 
       <section className="app-card">
@@ -695,43 +701,43 @@ export default async function PeerPreviewPage() {
               <div className="grid gap-3">
                 {
                   recentReports.map(
-                    (report) => {
-                      const reportCoverageTotal =
-                        report.goodSeconds +
-                        report.limitedSeconds +
-                        report.pausedSeconds +
-                        report.unknownSeconds;
-
-                      return (
-                        <article
-                          key={report.id}
-                          className="app-card"
-                        >
-                          <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
-                            {formatReportDate(
-                              report.reportDate
+                    (report) => (
+                      <article
+                        key={report.id}
+                        className="app-card"
+                      >
+                        <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
+                          {formatReportDate(
+                            report.reportDate
+                          )}
+                        </h3>
+                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                          Total:{" "}
+                          <strong className="text-slate-700 dark:text-slate-200">
+                            {formatDuration(
+                              report.totalSeconds
                             )}
-                          </h3>
-                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                            Total:{" "}
-                            <strong className="text-slate-700 dark:text-slate-200">
-                              {formatDuration(
-                                report.totalSeconds
-                              )}
-                            </strong>
-                          </p>
-                          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            Good tracking:{" "}
-                            <strong className="text-slate-700 dark:text-slate-200">
-                              {formatPercentage(
-                                report.goodSeconds,
-                                reportCoverageTotal
-                              )}
-                            </strong>
-                          </p>
-                        </article>
-                      );
-                    }
+                          </strong>
+                        </p>
+
+                        <div className="mt-5 border-t border-slate-200 pt-5 dark:border-slate-800">
+                          <TrackingIntegrityBreakdown
+                            goodSeconds={
+                              report.goodSeconds
+                            }
+                            limitedSeconds={
+                              report.limitedSeconds
+                            }
+                            pausedSeconds={
+                              report.pausedSeconds
+                            }
+                            unknownSeconds={
+                              report.unknownSeconds
+                            }
+                          />
+                        </div>
+                      </article>
+                    )
                   )
                 }
               </div>

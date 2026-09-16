@@ -7,6 +7,10 @@ import {
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
 import {
+  TrackingIntegrityBreakdown,
+  TrackingIntegrityLegend
+} from "@/components/ReportBreakdowns";
+import {
   prisma
 } from "@/lib/prisma";
 
@@ -640,6 +644,8 @@ export default async function PeerViewPage({
             )
           }
         </div>
+
+        <TrackingIntegrityLegend />
       </section>
 
       <section className="app-card">
@@ -842,19 +848,13 @@ export default async function PeerViewPage({
               <div className="grid gap-3">
                 {
                   recentReports.map(
-                    (report) => {
-                      const reportCoverageTotal =
-                        report.goodSeconds +
-                        report.limitedSeconds +
-                        report.pausedSeconds +
-                        report.unknownSeconds;
-
-                      return (
-                        <article
-                          key={report.id}
-                          className="app-card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div>
+                    (report) => (
+                      <article
+                        key={report.id}
+                        className="app-card"
+                      >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
                             <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
                               {formatReportDate(
                                 report.reportDate
@@ -867,14 +867,6 @@ export default async function PeerViewPage({
                                   report.totalSeconds
                                 )}
                               </strong>
-                              {" · "}
-                              Good tracking:{" "}
-                              <strong className="text-slate-700 dark:text-slate-200">
-                                {formatPercentage(
-                                  report.goodSeconds,
-                                  reportCoverageTotal
-                                )}
-                              </strong>
                             </p>
                           </div>
 
@@ -884,9 +876,26 @@ export default async function PeerViewPage({
                           >
                             Open Report
                           </Link>
-                        </article>
-                      );
-                    }
+                        </div>
+
+                        <div className="mt-5 border-t border-slate-200 pt-5 dark:border-slate-800">
+                          <TrackingIntegrityBreakdown
+                            goodSeconds={
+                              report.goodSeconds
+                            }
+                            limitedSeconds={
+                              report.limitedSeconds
+                            }
+                            pausedSeconds={
+                              report.pausedSeconds
+                            }
+                            unknownSeconds={
+                              report.unknownSeconds
+                            }
+                          />
+                        </div>
+                      </article>
+                    )
                   )
                 }
               </div>
