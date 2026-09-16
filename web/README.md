@@ -37,19 +37,13 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Production migrations
 
-The production build runs Prisma migrations before building the app:
+Run Prisma migrations separately before deploying code that depends on new database tables or columns:
 
 ```bash
-npm run build
+npm run migrate:deploy
 ```
 
-That script runs `prisma migrate deploy`, then `prisma generate`, then `next build`. This keeps production code from deploying before required database tables or columns exist.
-
-For local build checks that should not apply migrations, use:
-
-```bash
-npm run build:local
-```
+Do not run migrations inside the Vercel build while `DATABASE_URL` points at the Supabase pooler. The pooler can hang during `prisma migrate deploy`, causing the deployment to hit Vercel's build timeout. The normal build command only generates Prisma Client and builds Next.js.
 
 ## Email notifications
 
