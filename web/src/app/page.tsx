@@ -790,9 +790,41 @@ export default async function Home() {
       {/* COVERAGE */}
 
       <section className="space-y-4">
-        <h2 className="app-section-title">
-          Today&apos;s Tracking Coverage
-        </h2>
+        <div>
+          <h2 className="app-section-title">
+            Today&apos;s Tracking Coverage
+          </h2>
+
+          <div className="mt-3 grid gap-2 text-sm text-slate-500 dark:text-slate-400 sm:grid-cols-2">
+            <p>
+              <strong className="text-slate-700 dark:text-slate-200">
+                Good:
+              </strong>{" "}
+              extension checked in recently with full tracking available.
+            </p>
+
+            <p>
+              <strong className="text-slate-700 dark:text-slate-200">
+                Limited:
+              </strong>{" "}
+              extension is connected, but incognito tracking is off.
+            </p>
+
+            <p>
+              <strong className="text-slate-700 dark:text-slate-200">
+                Paused:
+              </strong>{" "}
+              tracking was intentionally paused from the extension.
+            </p>
+
+            <p>
+              <strong className="text-slate-700 dark:text-slate-200">
+                Unknown:
+              </strong>{" "}
+              no recent heartbeat was received for that time period.
+            </p>
+          </div>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {
