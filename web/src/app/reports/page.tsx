@@ -102,7 +102,7 @@ export default async function ReportsHomePage() {
         backLabel="← Back to Dashboard"
         eyebrow="Reports"
         title="Reports"
-        description="Choose whether you want to review your own accountability history or reports from peers you support."
+        description="Start with your own history, or review reports shared by people you support."
       />
 
       <section className="grid gap-4 md:grid-cols-2">
@@ -119,7 +119,7 @@ export default async function ReportsHomePage() {
           </h2>
 
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Your daily reports, tracking coverage, peer sharing status, and responses.
+            Your generated daily reports, tracking coverage, peer sharing status, and responses.
           </p>
 
           <p className="mt-5 text-sm font-semibold text-indigo-700 dark:text-indigo-200">
@@ -152,7 +152,7 @@ export default async function ReportsHomePage() {
           </h2>
 
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Reports from people you are keeping accountable.
+            Reports shared by people who asked you to keep them accountable.
           </p>
 
           <p className="mt-5 text-sm font-semibold text-red-700 dark:text-red-200">

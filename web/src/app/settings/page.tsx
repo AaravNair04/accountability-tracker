@@ -93,7 +93,7 @@ export default async function SettingsPage() {
         backLabel="← Back to Dashboard"
         eyebrow="Account"
         title="Settings"
-        description="Manage username, timezone, exports, data retention, deletion controls, and audit history."
+        description="Keep your identity, timezone, privacy controls, and account history accurate."
       />
 
       <UsernameSettings

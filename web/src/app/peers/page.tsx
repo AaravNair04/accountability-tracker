@@ -237,7 +237,7 @@ export default async function PeersPage() {
         backLabel="← Back to Dashboard"
         eyebrow="Peers"
         title="Accountability Peers"
-        description="Invite people you trust to hold you accountable and review the people who trust you."
+        description="Manage both sides of accountability: people reviewing your reports, and people whose reports you review."
         action={
           <Link
             href="/peers/preview"
@@ -254,16 +254,20 @@ export default async function PeersPage() {
       <section className="space-y-4">
 
         <h2 className="app-section-title">
-          People You&apos;re Holding Accountable
+          People I Support
         </h2>
+
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          These are people whose reports you can review after you accept their invitation.
+        </p>
 
 
         {
           receivedInvitations.length === 0
             ? (
               <EmptyState
-                title="No one has asked you yet"
-                description="When someone invites you to hold them accountable, their request will appear here."
+                title="No one has asked for your support yet"
+                description="When someone invites you to review their accountability reports, the request will appear here."
               />
             )
             : (
@@ -345,7 +349,7 @@ export default async function PeersPage() {
                               }
                               className="app-button-primary mt-3 inline-flex no-underline"
                             >
-                              View Accountability
+                              View accountability
                             </Link>
 
                           )
@@ -404,15 +408,19 @@ export default async function PeersPage() {
           My Accountability Peers
         </h2>
 
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          These people can review reports you generate and respond with feedback.
+        </p>
+
 
         {
           sentInvitations.length === 0
             ? (
               <EmptyState
                 title="Invite your first accountability peer"
-                description="Choose someone you trust so they can view your daily accountability reports."
+                description="Invite someone you trust. After they accept, completed reports will be available in their peer report feed."
                 actionHref="#invite-peer"
-                actionLabel="Invite a Peer"
+                actionLabel="Invite a peer"
               />
             )
             : (
@@ -484,8 +492,7 @@ export default async function PeersPage() {
                             "pending" && (
 
                             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                              Waiting for this person
-                              to accept your invitation.
+                              Waiting for this person to accept. They cannot see your reports until they accept.
                             </p>
 
                           )
@@ -500,8 +507,7 @@ export default async function PeersPage() {
 
                             <>
                               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                                This person is holding
-                                you accountable.
+                                This person can review your delivered reports.
                               </p>
 
 
@@ -605,8 +611,7 @@ export default async function PeersPage() {
                             "rejected" && (
 
                             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                              This invitation was
-                              rejected.
+                              This invitation was rejected.
                             </p>
 
                           )
@@ -621,9 +626,7 @@ export default async function PeersPage() {
                           ) && (
 
                             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                              Access revoked. This peer
-                              can no longer view your
-                              accountability reports.
+                              Access revoked. This peer can no longer view your accountability reports.
                             </p>
 
                           )
@@ -653,6 +656,10 @@ export default async function PeersPage() {
         <h2 className="app-section-title">
           Invite a Peer
         </h2>
+
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Use an email or @username for someone who already has an account.
+        </p>
 
 
         <div className="mt-4">

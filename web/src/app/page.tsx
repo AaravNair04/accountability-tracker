@@ -6,6 +6,7 @@ import {
 
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
+import GenerateReportButton from "@/app/GenerateReportButton";
 import {
   prisma
 } from "@/lib/prisma";
@@ -175,6 +176,179 @@ function getActivityTypeClassName(
 }
 
 
+function getTrackingStatusCopy(
+  status: string,
+  hasDevice: boolean
+) {
+  if (
+    !hasDevice
+  ) {
+    return {
+      label:
+        "No device linked",
+
+      detail:
+        "Install and link the browser extension to start tracking."
+    };
+  }
+
+  if (
+    status ===
+    "GOOD"
+  ) {
+    return {
+      label:
+        "Tracking normally",
+
+      detail:
+        "Your extension checked in recently and full tracking is available."
+    };
+  }
+
+  if (
+    status ===
+    "LIMITED"
+  ) {
+    return {
+      label:
+        "Tracking, limited",
+
+      detail:
+        "Your extension is connected, but incognito tracking is not enabled."
+    };
+  }
+
+  if (
+    status ===
+    "PAUSED"
+  ) {
+    return {
+      label:
+        "Paused",
+
+      detail:
+        "Tracking is paused from the browser extension."
+    };
+  }
+
+  return {
+    label:
+      "Needs a sync",
+
+    detail:
+      "The extension has not checked in recently. Reload it or relink the browser if this stays here."
+  };
+}
+
+
+type OnboardingStep = {
+  title: string;
+  description: string;
+  href: string;
+  action: string;
+  complete: boolean;
+};
+
+
+function OnboardingChecklist({
+  steps
+}: {
+  steps: OnboardingStep[];
+}) {
+  const completedSteps =
+    steps.filter(
+      (step) =>
+        step.complete
+    ).length;
+
+  if (
+    completedSteps ===
+    steps.length
+  ) {
+    return null;
+  }
+
+  return (
+    <section className="app-card">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            Getting started
+          </p>
+
+          <h2 className="mt-1 text-xl font-semibold text-slate-950 dark:text-white">
+            Finish your setup
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Complete these steps so reports and peer views have enough context to be useful.
+          </p>
+        </div>
+
+        <span className="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
+          {completedSteps} of {steps.length} done
+        </span>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        {
+          steps.map(
+            (step) => (
+              <div
+                key={step.title}
+                className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex gap-3">
+                  <span
+                    className={
+                      [
+                        "mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full border text-xs font-bold",
+                        step.complete
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+                          : "border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200"
+                      ].join(
+                        " "
+                      )
+                    }
+                  >
+                    {
+                      step.complete
+                        ? "OK"
+                        : "Go"
+                    }
+                  </span>
+
+                  <div>
+                    <h3 className="font-semibold text-slate-950 dark:text-white">
+                      {step.title}
+                    </h3>
+
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+
+                {
+                  !step.complete && (
+                    <Link
+                      href={step.href}
+                      className="app-button-secondary inline-flex justify-center no-underline"
+                    >
+                      {step.action}
+                    </Link>
+                  )
+                }
+              </div>
+            )
+          )
+        }
+      </div>
+    </section>
+  );
+}
+
+
 export default async function Home() {
   const supabase =
     await createClient();
@@ -225,6 +399,9 @@ export default async function Home() {
       },
 
       select: {
+        username:
+          true,
+
         timezone:
           true
       }
@@ -235,7 +412,11 @@ export default async function Home() {
     pendingInvitationCount,
     newPeerResponseCount,
     sentPendingInvitationCount,
-    accountabilityPeers
+    accountabilityPeers,
+    activeDeviceCount,
+    trackedSiteCount,
+    acceptedPeerCount,
+    dailyReportCount
   ] =
     await Promise.all([
       prisma.reportDelivery.count({
@@ -335,6 +516,51 @@ export default async function Home() {
 
         take:
           3
+      }),
+
+      prisma.device.count({
+        where: {
+          userId:
+            user.id,
+
+          confirmedAt: {
+            not:
+              null
+          },
+
+          revokedAt:
+            null
+        }
+      }),
+
+      prisma.trackedSite.count({
+        where: {
+          userId:
+            user.id,
+
+          enabled:
+            true
+        }
+      }),
+
+      prisma.trustedPeer.count({
+        where: {
+          ownerId:
+            user.id,
+
+          status:
+            "accepted",
+
+          revokedAt:
+            null
+        }
+      }),
+
+      prisma.dailyReport.count({
+        where: {
+          userId:
+            user.id
+        }
       })
     ]);
 
@@ -534,6 +760,104 @@ export default async function Home() {
       MINIMUM_VISIBLE_ACTIVITY_SEGMENT_SECONDS
     );
 
+  const trackingStatusCopy =
+    getTrackingStatusCopy(
+      current.status,
+      Boolean(
+        current.device
+      )
+    );
+
+  const onboardingSteps:
+    OnboardingStep[] = [
+      {
+        title:
+          "Set your username",
+
+        description:
+          "Peers will recognize reports faster when your name is clear.",
+
+        href:
+          "/settings",
+
+        action:
+          "Open settings",
+
+        complete:
+          Boolean(
+            profile.username
+          )
+      },
+      {
+        title:
+          "Link the browser extension",
+
+        description:
+          "This connects real browsing activity to your account.",
+
+        href:
+          "/devices/link",
+
+        action:
+          "Link extension",
+
+        complete:
+          activeDeviceCount >
+          0
+      },
+      {
+        title:
+          "Choose tracked websites",
+
+        description:
+          "Pick the sites that should appear in your activity and reports.",
+
+        href:
+          "/tracked-sites",
+
+        action:
+          "Choose sites",
+
+        complete:
+          trackedSiteCount >
+          0
+      },
+      {
+        title:
+          "Invite an accountability peer",
+
+        description:
+          "Peers can review delivered reports and respond with feedback.",
+
+        href:
+          "/peers#invite-peer",
+
+        action:
+          "Invite peer",
+
+        complete:
+          acceptedPeerCount >
+          0
+      },
+      {
+        title:
+          "Generate your first report",
+
+        description:
+          "Create a preview once tracking data exists, then completed daily reports build your history.",
+
+        href:
+          "/reports/my",
+
+        action:
+          "View reports",
+
+        complete:
+          dailyReportCount >
+          0
+      }
+    ];
+
 
   return (
     <main className="app-page space-y-8">
@@ -554,6 +878,10 @@ export default async function Home() {
             }
           </Link>
         }
+      />
+
+      <OnboardingChecklist
+        steps={onboardingSteps}
       />
 
       {/* ACCOUNTABILITY */}
@@ -587,9 +915,12 @@ export default async function Home() {
             accountabilityPeers.length ===
               0
               ? (
-                <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
-                  No accepted peer relationships yet.
-                </p>
+                <EmptyState
+                  title="No peers to review yet"
+                  description="When someone accepts your support, their live accountability view will appear here."
+                  actionHref="/peers"
+                  actionLabel="Manage peers"
+                />
               )
               : (
                 <div className="mt-4 grid gap-3">
@@ -705,15 +1036,11 @@ export default async function Home() {
           </p>
 
           <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
-            {current.status}
+            {trackingStatusCopy.label}
           </p>
 
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {
-              current.device
-                ? current.device.name
-                : "No linked device"
-            }
+            {trackingStatusCopy.detail}
           </p>
         </div>
 
@@ -745,7 +1072,11 @@ export default async function Home() {
             <strong>
               Status:
             </strong>{" "}
-            {current.status}
+            {trackingStatusCopy.label}
+          </p>
+
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            {trackingStatusCopy.detail}
           </p>
 
           {
@@ -778,31 +1109,59 @@ export default async function Home() {
               )
               : (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  No confirmed, non-revoked
-                  tracking device found.
+                  Link the browser extension so tracking status can update automatically.
                 </p>
               )
           }
         </div>
       </section>
 
+      <section className="app-card">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="app-section-title">
+              Report Preview
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Generate a preview after activity syncs. Completed daily reports are what peers receive.
+            </p>
+          </div>
+
+          <Link
+            href="/reports/my"
+            className="app-button-secondary inline-flex justify-center no-underline"
+          >
+            My reports
+          </Link>
+        </div>
+
+        <GenerateReportButton />
+      </section>
+
 
       {/* COVERAGE */}
 
       <section className="space-y-4">
-        <h2 className="app-section-title">
-          Today&apos;s Tracking Coverage
-        </h2>
+        <div>
+          <h2 className="app-section-title">
+            Today&apos;s Tracking Coverage
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Coverage shows how trustworthy today&apos;s tracking window is: normal means the extension checked in recently, limited means incognito access is off, paused means you paused tracking, and needs a sync means the app has no recent heartbeat.
+          </p>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {
             [
               [
-                "Good",
+                "Tracking normally",
                 coverage.goodSeconds
               ],
               [
-                "Limited",
+                "Limited tracking",
                 coverage.limitedSeconds
               ],
               [
@@ -810,7 +1169,7 @@ export default async function Home() {
                 coverage.pausedSeconds
               ],
               [
-                "Unknown",
+                "Needs a sync",
                 coverage.unknownSeconds
               ]
             ].map(
@@ -904,9 +1263,12 @@ export default async function Home() {
           siteUsage.length ===
             0
             ? (
-              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                No tracked usage today.
-              </p>
+              <EmptyState
+                title="No tracked usage today"
+                description="Keep the extension enabled and visit one of your tracked websites. Activity appears here after it syncs."
+                actionHref="/tracked-sites"
+                actionLabel="Review tracked websites"
+              />
             )
             : (
               <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">

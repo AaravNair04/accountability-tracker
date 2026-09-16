@@ -135,7 +135,7 @@ function getDeviceStatus(
       className:
         "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
       detail:
-        "The extension has not completed its first verification yet."
+        "Open the extension or relink this browser to finish verification."
     };
   }
 
@@ -160,7 +160,7 @@ function getDeviceStatus(
       className:
         "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
       detail:
-        "This browser has not synced recently."
+        "This browser has not checked in recently. Reload the extension if you are using it now."
     };
   }
 
@@ -192,7 +192,7 @@ function DeviceCard({
   const incognitoStatus =
     device.incognitoEnabled ===
       null
-      ? "Unknown"
+      ? "Not checked yet"
       : device.incognitoEnabled
         ? "Enabled"
         : "Disabled";
@@ -450,7 +450,7 @@ export default async function DevicesPage() {
         backLabel="← Back to Dashboard"
         eyebrow="Devices"
         title="Connected Devices"
-        description="Browser extensions linked to your accountability account."
+        description="Browsers that can upload tracking data for your account. If sync looks stale, reload the extension first."
         action={
           <Link
             href="/devices/link"
@@ -467,9 +467,9 @@ export default async function DevicesPage() {
           ? (
             <EmptyState
               title="No browser extension linked yet"
-              description="Connect the browser extension so Accountability Tracker can receive usage sessions from this device."
+              description="Link this browser extension first. Once connected, visits to tracked websites can sync into your dashboard and reports."
               actionHref="/devices/link"
-              actionLabel="Connect browser extension"
+              actionLabel="Link this browser"
             />
           )
           : (
@@ -494,7 +494,7 @@ export default async function DevicesPage() {
                       0
                       ? (
                         <p className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
-                          No devices in this section.
+                          Nothing here right now.
                         </p>
                       )
                       : (

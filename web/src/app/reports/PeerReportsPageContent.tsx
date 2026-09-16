@@ -122,7 +122,7 @@ export default async function PeerReportsPageContent({
         backLabel={backLabel}
         eyebrow="Reports"
         title="My Peers' Reports"
-        description="Reports shared with you by people you are keeping accountable."
+        description="Reports shared by people who trust you to keep them accountable."
         action={
           <span className="inline-flex rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">
             {unreadCount} unread
@@ -136,9 +136,9 @@ export default async function PeerReportsPageContent({
           ? (
             <EmptyState
               title="No shared reports yet"
-              description="When someone you hold accountable has a daily report ready, it will appear here."
+              description="Accepted peers will appear here after they generate completed reports and those reports are delivered to you."
               actionHref="/peers"
-              actionLabel="View peers"
+              actionLabel="Review peer connections"
             />
           )
           : (

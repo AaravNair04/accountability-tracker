@@ -690,8 +690,8 @@ export default async function PeerViewPage({
           siteUsage.length ===
             0
             ? (
-              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                No tracked usage today.
+              <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+                No tracked usage has synced for today yet. Check back after this peer uses one of their tracked websites.
               </p>
             )
             : (

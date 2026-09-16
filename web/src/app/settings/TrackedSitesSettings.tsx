@@ -279,8 +279,7 @@ export default function TrackedSitesSettings({
 
 
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-        These websites are tracked by the browser extension.
-        Changes sync the next time the extension contacts the app.
+        Add hostnames like youtube.com or instagram.com. The extension will only track websites listed here.
       </p>
 
 
@@ -356,7 +355,7 @@ export default function TrackedSitesSettings({
             <div className="mt-5">
               <EmptyState
                 title="No websites are tracked yet"
-                description="Add YouTube, Instagram, Netflix, Twitch, or any hostname you want the extension to watch."
+                description="Add at least one hostname so the extension knows what activity should appear on your dashboard."
               />
             </div>
           )

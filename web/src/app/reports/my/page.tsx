@@ -206,9 +206,9 @@ export default async function ReportsPage() {
           ? (
             <EmptyState
               title="No daily reports yet"
-              description="Your first report will appear here after tracking data is collected and a daily report is generated."
-              actionHref="/tracked-sites"
-              actionLabel="Check tracked websites"
+              description="Link the extension, choose tracked websites, then generate a preview from the dashboard once activity has synced."
+              actionHref="/devices/link"
+              actionLabel="Link extension"
             />
           )
           : (
@@ -400,7 +400,7 @@ export default async function ReportsPage() {
                                   report.deliveries.length ===
                                     0
                                     ? "This report has not been shared with peers yet."
-                                    : `${report.deliveries.length} peer report link${report.deliveries.length === 1 ? "" : "s"} created. Email sending is paused for now.`
+                                    : `${report.deliveries.length} peer report link${report.deliveries.length === 1 ? "" : "s"} created. Peers can view it inside the app.`
                                 }
                               </p>
                             </div>
@@ -415,7 +415,7 @@ export default async function ReportsPage() {
                                 </p>
 
                                 <p className="mt-1">
-                                  Peers can still see shared reports in their peer report feed. Resend retries are disabled until a verified sending domain is added.
+                                  Peers can still see shared reports in their peer report feed. Email delivery is intentionally paused until a verified sending domain is added.
                                 </p>
                               </div>
                             )
@@ -432,7 +432,7 @@ export default async function ReportsPage() {
                               0
                               ? (
                                 <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
-                                  No peer responses yet.
+                                  No peer responses yet. When a peer replies, their note will appear here.
                                 </p>
                               )
                               : (

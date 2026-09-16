@@ -44,7 +44,7 @@ export default async function TrackedSitesPage() {
         backLabel="← Back to Dashboard"
         eyebrow="Extension Configuration"
         title="Tracked Websites"
-        description="Choose which websites the browser extension should track. Changes sync the next time the extension checks in."
+        description="Choose the websites that should count toward activity and reports. Changes sync the next time the extension checks in."
       />
 
       <TrackedSitesSettings

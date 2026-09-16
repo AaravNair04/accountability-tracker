@@ -246,7 +246,7 @@ export default async function NotificationsPage() {
         backLabel="← Back to Dashboard"
         eyebrow="Notifications"
         title="Notifications"
-        description="Invitations, unread reports, peer responses, and pending accountability updates."
+        description="A single place for invitations, unread peer reports, responses to your reports, and pending accountability updates."
         action={
           <Link
             href="/reports/peers"
@@ -263,7 +263,7 @@ export default async function NotificationsPage() {
           ? (
             <EmptyState
               title="Nothing needs attention right now"
-              description="You are caught up. You can still open peer reports to review accountability reports from others."
+              description="You are caught up. New invitations, unread peer reports, and responses to your reports will appear here."
               actionHref="/reports/peers"
               actionLabel="Open peer reports"
             />
@@ -285,7 +285,7 @@ export default async function NotificationsPage() {
             0
             ? (
               <SectionEmpty>
-                No pending invitations.
+                No one is waiting for you to accept an accountability invitation.
               </SectionEmpty>
             )
             : pendingInvitations.map(
@@ -329,7 +329,7 @@ export default async function NotificationsPage() {
             0
             ? (
               <SectionEmpty>
-                No unread accountability reports.
+                No unread reports from people you support.
               </SectionEmpty>
             )
             : unreadDeliveries.map(
@@ -375,7 +375,7 @@ export default async function NotificationsPage() {
             0
             ? (
               <SectionEmpty>
-                No new responses to your reports.
+                No new peer responses to your reports.
               </SectionEmpty>
             )
             : unseenResponses.map(
@@ -427,7 +427,7 @@ export default async function NotificationsPage() {
             0
             ? (
               <SectionEmpty>
-                No sent invitations are waiting.
+                No sent invitations are waiting for acceptance.
               </SectionEmpty>
             )
             : sentPendingInvitations.map(
