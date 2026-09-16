@@ -35,6 +35,22 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## Production migrations
+
+The production build runs Prisma migrations before building the app:
+
+```bash
+npm run build
+```
+
+That script runs `prisma migrate deploy`, then `prisma generate`, then `next build`. This keeps production code from deploying before required database tables or columns exist.
+
+For local build checks that should not apply migrations, use:
+
+```bash
+npm run build:local
+```
+
 ## Email notifications
 
 Report-ready peer emails use the Resend HTTP API. Add these environment variables in Vercel:
