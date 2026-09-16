@@ -121,47 +121,101 @@ const databaseRateLimitStore: RateLimitStore = {
       prisma
     } = await import("@/lib/prisma");
 
-    const nowDate =
-      new Date(now);
+    try {
+      const nowDate =
+        new Date(now);
 
-    const existingBucket =
-      await prisma.rateLimitBucket.findUnique({
-        where: {
-          key
-        }
-      });
+      const existingBucket =
+        await prisma.rateLimitBucket.findUnique({
+          where: {
+            key
+          }
+        });
 
-    if (
-      !existingBucket ||
-      existingBucket.resetAt <= nowDate
-    ) {
-      await prisma.rateLimitBucket.upsert({
+      if (
+        !existingBucket ||
+        existingBucket.resetAt <= nowDate
+      ) {
+        await prisma.rateLimitBucket.upsert({
+          where: {
+            key
+          },
+
+          update: {
+            count:
+              1,
+
+            resetAt:
+              new Date(
+                now + windowMs
+              )
+          },
+
+          create: {
+            key,
+
+            count:
+              1,
+
+            resetAt:
+              new Date(
+                now + windowMs
+              )
+          }
+        });
+
+        return {
+          allowed:
+            true,
+
+          retryAfterSeconds:
+            0
+        };
+      }
+
+      if (
+        existingBucket.count >= limit
+      ) {
+        return {
+          allowed:
+            false,
+
+          retryAfterSeconds:
+            Math.ceil(
+              (
+                existingBucket.resetAt.getTime() -
+                now
+              ) /
+                1000
+            )
+        };
+      }
+
+      await prisma.rateLimitBucket.update({
         where: {
           key
         },
 
-        update: {
-          count:
-            1,
-
-          resetAt:
-            new Date(
-              now + windowMs
-            )
-        },
-
-        create: {
-          key,
-
-          count:
-            1,
-
-          resetAt:
-            new Date(
-              now + windowMs
-            )
+        data: {
+          count: {
+            increment:
+              1
+          }
         }
       });
+
+      if (
+        Math.random() < 0.01
+      ) {
+        await prisma.rateLimitBucket.deleteMany({
+          where: {
+            resetAt: {
+              lt:
+                nowDate
+            }
+          }
+        });
+      }
 
       return {
         allowed:
@@ -170,61 +224,93 @@ const databaseRateLimitStore: RateLimitStore = {
         retryAfterSeconds:
           0
       };
-    }
+    } catch (error) {
+      if (
+        isMissingRateLimitTableError(
+          error
+        )
+      ) {
+        warnMissingRateLimitTableOnce();
 
-    if (
-      existingBucket.count >= limit
-    ) {
-      return {
-        allowed:
-          false,
-
-        retryAfterSeconds:
-          Math.ceil(
-            (
-              existingBucket.resetAt.getTime() -
-              now
-            ) /
-              1000
-          )
-      };
-    }
-
-    await prisma.rateLimitBucket.update({
-      where: {
-        key
-      },
-
-      data: {
-        count: {
-          increment:
-            1
-        }
+        return fallbackRateLimitStore.consume({
+          key,
+          limit,
+          windowMs,
+          now
+        });
       }
-    });
 
-    if (
-      Math.random() < 0.01
-    ) {
-      await prisma.rateLimitBucket.deleteMany({
-        where: {
-          resetAt: {
-            lt:
-              nowDate
-          }
-        }
-      });
+      throw error;
     }
-
-    return {
-      allowed:
-        true,
-
-      retryAfterSeconds:
-        0
-    };
   }
 };
+
+
+const fallbackRateLimitStore =
+  createInMemoryRateLimitStore();
+
+
+let missingRateLimitTableWarned =
+  false;
+
+
+export function isMissingRateLimitTableError(
+  error: unknown
+) {
+  const candidate =
+    error as {
+      code?: unknown;
+      message?: unknown;
+    };
+
+  if (
+    candidate.code === "P2021" ||
+    candidate.code === "42P01"
+  ) {
+    return true;
+  }
+
+  const message =
+    typeof candidate.message ===
+      "string"
+      ? candidate.message
+      : "";
+
+  return (
+    (
+      message.includes(
+        "rate_limit_buckets"
+      ) ||
+      message.includes(
+        "RateLimitBucket"
+      )
+    ) &&
+    (
+      message.includes(
+        "does not exist"
+      ) ||
+      message.includes(
+        "not found"
+      )
+    )
+  );
+};
+
+
+function warnMissingRateLimitTableOnce() {
+  if (
+    missingRateLimitTableWarned
+  ) {
+    return;
+  }
+
+  missingRateLimitTableWarned =
+    true;
+
+  console.warn(
+    "[RateLimit] rate_limit_buckets table is missing. Falling back to in-memory limits until migrations are applied."
+  );
+}
 
 
 export async function checkRateLimit(

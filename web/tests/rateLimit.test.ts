@@ -3,7 +3,8 @@ import test from "node:test";
 
 import {
   checkRateLimit,
-  createInMemoryRateLimitStore
+  createInMemoryRateLimitStore,
+  isMissingRateLimitTableError
 } from "../src/lib/rateLimit";
 
 
@@ -96,5 +97,35 @@ test(
       Date.now =
         originalNow;
     }
+  }
+);
+
+
+test(
+  "detects missing durable rate limit table errors",
+  () => {
+    assert.equal(
+      isMissingRateLimitTableError({
+        code:
+          "P2021"
+      }),
+      true
+    );
+
+    assert.equal(
+      isMissingRateLimitTableError({
+        message:
+          "relation \"rate_limit_buckets\" does not exist"
+      }),
+      true
+    );
+
+    assert.equal(
+      isMissingRateLimitTableError({
+        message:
+          "connection timed out"
+      }),
+      false
+    );
   }
 );
