@@ -148,17 +148,23 @@ model DailyReport {
 }
 
 model ReportDelivery {
-  id        String      @id @default(cuid())
-  createdAt DateTime    @default(now())
-  viewedAt  DateTime?
-  reportId  String
-  peerId    String
-  peer      User        @relation("ReportDeliveryPeer", fields: [peerId], references: [id], onDelete: Cascade)
-  report    DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  id                 String      @id @default(cuid())
+  createdAt          DateTime    @default(now())
+  viewedAt           DateTime?
+  emailAttemptedAt   DateTime?
+  emailSentAt        DateTime?
+  emailSkippedAt     DateTime?
+  emailFailedAt      DateTime?
+  emailFailureReason String?
+  reportId           String
+  peerId             String
+  peer               User        @relation("ReportDeliveryPeer", fields: [peerId], references: [id], onDelete: Cascade)
+  report             DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, peerId])
   @@index([peerId])
   @@index([reportId])
+  @@index([emailSentAt])
   @@map("report_deliveries")
 }
 

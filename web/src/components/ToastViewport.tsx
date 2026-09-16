@@ -6,7 +6,7 @@ import {
 } from "react";
 
 type Toast = {
-  id: number;
+  id: string;
   message: string;
   tone?: "error" | "success";
 };
@@ -26,6 +26,13 @@ export function showToast(
   message: string,
   tone: "error" | "success" = "success"
 ) {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
   window.dispatchEvent(
     new CustomEvent(
       "accountability-toast",
@@ -51,7 +58,7 @@ export default function ToastViewport() {
         event: CustomEvent<ToastEventDetail>
       ) {
         const id =
-          Date.now();
+          `${Date.now()}-${Math.random()}`;
 
         setToasts(
           (current) => [
@@ -106,12 +113,22 @@ export default function ToastViewport() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 grid w-[min(100%-2rem,22rem)] gap-2">
+    <div
+      aria-live="polite"
+      aria-atomic="false"
+      className="fixed bottom-4 right-4 z-50 grid w-[min(100%-2rem,22rem)] gap-2"
+    >
       {
         toasts.map(
           (toast) => (
             <div
               key={toast.id}
+              role={
+                toast.tone ===
+                  "error"
+                  ? "alert"
+                  : "status"
+              }
               className={
                 [
                   "rounded-lg border px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur",

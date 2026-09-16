@@ -5,6 +5,7 @@ type SendReportReadyEmailInput = {
   reportId: string;
   reportDate: Date;
   timezone: string;
+  idempotencyKey?: string;
 };
 
 
@@ -13,6 +14,14 @@ type SendEmailInput = {
   subject: string;
   text: string;
   html: string;
+  idempotencyKey?: string;
+};
+
+
+export type SendEmailResult = {
+  sent: boolean;
+  skipped: boolean;
+  error?: string;
 };
 
 
@@ -96,8 +105,9 @@ async function sendEmail({
   to,
   subject,
   text,
-  html
-}: SendEmailInput) {
+  html,
+  idempotencyKey
+}: SendEmailInput): Promise<SendEmailResult> {
   const apiKey =
     process.env.RESEND_API_KEY;
 
@@ -108,8 +118,11 @@ async function sendEmail({
     !apiKey ||
     !from
   ) {
+    const error =
+      "RESEND_API_KEY or REPORT_EMAIL_FROM is not configured.";
+
     console.warn(
-      "[Email] Report email skipped because RESEND_API_KEY or REPORT_EMAIL_FROM is not configured."
+      `[Email] Report email skipped because ${error}`
     );
 
     return {
@@ -117,12 +130,30 @@ async function sendEmail({
         false,
 
       skipped:
-        true
+        true,
+
+      error
     };
   }
 
   let response:
     Response;
+
+  const headers:
+    Record<string, string> = {
+      "Authorization":
+        `Bearer ${apiKey}`,
+
+      "Content-Type":
+        "application/json"
+    };
+
+  if (
+    idempotencyKey
+  ) {
+    headers["Idempotency-Key"] =
+      idempotencyKey;
+  }
 
   try {
     response =
@@ -132,13 +163,7 @@ async function sendEmail({
           method:
             "POST",
 
-          headers: {
-            "Authorization":
-              `Bearer ${apiKey}`,
-
-            "Content-Type":
-              "application/json"
-          },
+          headers,
 
           body:
             JSON.stringify({
@@ -151,6 +176,11 @@ async function sendEmail({
         }
       );
   } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown email request failure.";
+
     console.error(
       "[Email] Report email request failed:",
       error
@@ -161,17 +191,22 @@ async function sendEmail({
         false,
 
       skipped:
-        false
+        false,
+
+      error:
+        message
     };
   }
 
   if (
     !response.ok
   ) {
+    const error =
+      `${response.status}: ${await response.text()}`;
+
     console.error(
       "[Email] Report email failed:",
-      response.status,
-      await response.text()
+      error
     );
 
     return {
@@ -179,7 +214,9 @@ async function sendEmail({
         false,
 
       skipped:
-        false
+        false,
+
+      error
     };
   }
 
@@ -199,7 +236,8 @@ export async function sendReportReadyEmail({
   ownerId,
   reportId,
   reportDate,
-  timezone
+  timezone,
+  idempotencyKey
 }: SendReportReadyEmailInput) {
   const appUrl =
     getAppUrl();
@@ -252,6 +290,7 @@ export async function sendReportReadyEmail({
     to,
     subject,
     text,
-    html
+    html,
+    idempotencyKey
   });
 }

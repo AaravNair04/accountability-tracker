@@ -3,10 +3,6 @@ import {
 } from "@/lib/prisma";
 
 import {
-  sendReportReadyEmail
-} from "@/lib/email";
-
-import {
   calendarDateToDatabaseDate,
   getDayStartUtc,
   getNextDayStartUtc,
@@ -16,6 +12,10 @@ import {
 import {
   calculateTrackingCoverage
 } from "@/lib/reports/trackingCoverage";
+
+import {
+  sendReportDeliveryEmail
+} from "@/lib/reports/reportDeliveryEmail";
 
 import type {
   CalendarDate
@@ -379,40 +379,26 @@ export async function generateDailyReport(
         });
 
       if (
-        existingDelivery
+        existingDelivery?.emailSentAt
       ) {
         continue;
       }
 
-      await prisma.reportDelivery.create({
-        data: {
-          reportId:
-            report.id,
+      const delivery =
+        existingDelivery ??
+        await prisma.reportDelivery.create({
+          data: {
+            reportId:
+              report.id,
 
-          peerId:
-            relationship.peerId
-        }
-      });
+            peerId:
+              relationship.peerId
+          }
+        });
 
-      await sendReportReadyEmail({
-        to:
-          relationship.peer.email,
-
-        ownerEmail:
-          reportOwner.email,
-
-        ownerId:
-          userId,
-
-        reportId:
-          report.id,
-
-        reportDate:
-          databaseReportDate,
-
-        timezone:
-          timeZone
-      });
+      await sendReportDeliveryEmail(
+        delivery.id
+      );
     }
   }
 

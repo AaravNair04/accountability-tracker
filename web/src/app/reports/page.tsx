@@ -4,6 +4,7 @@ import {
 
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
+import RetryReportEmailsButton from "./RetryReportEmailsButton";
 import {
   SiteUsageBreakdown,
   TrackingIntegrityBreakdown,
@@ -124,6 +125,22 @@ export default async function ReportsPage() {
       },
 
       include: {
+        deliveries: {
+          include: {
+            peer: {
+              select: {
+                email:
+                  true
+              }
+            }
+          },
+
+          orderBy: {
+            createdAt:
+              "asc"
+          }
+        },
+
         responses: {
           include: {
             peer: {
@@ -200,6 +217,24 @@ export default async function ReportsPage() {
                     const topSites =
                       getTopSites(
                         siteUsage
+                      );
+
+                    const unsentDeliveries =
+                      report.deliveries.filter(
+                        (delivery) =>
+                          !delivery.emailSentAt
+                      );
+
+                    const failedDeliveries =
+                      report.deliveries.filter(
+                        (delivery) =>
+                          delivery.emailFailedAt
+                      );
+
+                    const sentDeliveries =
+                      report.deliveries.filter(
+                        (delivery) =>
+                          delivery.emailSentAt
                       );
 
                     return (
@@ -363,6 +398,72 @@ export default async function ReportsPage() {
                             />
                           </section>
                         </div>
+
+                        <section className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <h3 className="font-semibold text-slate-950 dark:text-white">
+                                Peer email delivery
+                              </h3>
+
+                              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                {
+                                  report.deliveries.length ===
+                                    0
+                                    ? "This report has not been delivered to peers."
+                                    : `${sentDeliveries.length} sent, ${unsentDeliveries.length} pending or failed.`
+                                }
+                              </p>
+                            </div>
+
+                            {
+                              unsentDeliveries.length >
+                                0 && (
+                                <RetryReportEmailsButton
+                                  reportId={report.id}
+                                  unsentCount={
+                                    unsentDeliveries.length
+                                  }
+                                />
+                              )
+                            }
+                          </div>
+
+                          {
+                            failedDeliveries.length >
+                              0 && (
+                              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-950/40 dark:text-red-200">
+                                <p className="font-semibold">
+                                  {
+                                    failedDeliveries.length
+                                  }{" "}
+                                  email {
+                                    failedDeliveries.length ===
+                                      1
+                                      ? "failed"
+                                      : "failures"
+                                  }
+                                </p>
+
+                                <ul className="mt-2 space-y-1">
+                                  {
+                                    failedDeliveries.map(
+                                      (delivery) => (
+                                        <li key={delivery.id}>
+                                          {delivery.peer.email}:{" "}
+                                          {
+                                            delivery.emailFailureReason ??
+                                            "Email send failed."
+                                          }
+                                        </li>
+                                      )
+                                    )
+                                  }
+                                </ul>
+                              </div>
+                            )
+                          }
+                        </section>
 
                         <section className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
                           <h3 className="font-semibold text-slate-950 dark:text-white">
