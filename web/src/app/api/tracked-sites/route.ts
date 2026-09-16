@@ -209,8 +209,7 @@ export async function POST(
       );
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `tracked-sites:write:${userId}`,
         limit:
@@ -399,8 +398,7 @@ export async function DELETE(
       );
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `tracked-sites:write:${userId}`,
         limit:

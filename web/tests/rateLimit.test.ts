@@ -2,15 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  checkRateLimit
+  checkRateLimit,
+  createInMemoryRateLimitStore
 } from "../src/lib/rateLimit";
 
 
 test(
   "blocks requests after the configured limit until the window resets",
-  () => {
+  async () => {
     const originalNow =
       Date.now;
+
+    const store =
+      createInMemoryRateLimitStore();
 
     let now =
       1000;
@@ -23,13 +27,13 @@ test(
         `test:${crypto.randomUUID()}`;
 
       assert.deepEqual(
-        checkRateLimit({
+        await checkRateLimit({
           key,
           limit:
             2,
           windowMs:
             1000
-        }),
+        }, store),
         {
           allowed:
             true,
@@ -39,13 +43,13 @@ test(
       );
 
       assert.deepEqual(
-        checkRateLimit({
+        await checkRateLimit({
           key,
           limit:
             2,
           windowMs:
             1000
-        }),
+        }, store),
         {
           allowed:
             true,
@@ -55,13 +59,13 @@ test(
       );
 
       assert.deepEqual(
-        checkRateLimit({
+        await checkRateLimit({
           key,
           limit:
             2,
           windowMs:
             1000
-        }),
+        }, store),
         {
           allowed:
             false,
@@ -74,13 +78,13 @@ test(
         2001;
 
       assert.deepEqual(
-        checkRateLimit({
+        await checkRateLimit({
           key,
           limit:
             2,
           windowMs:
             1000
-        }),
+        }, store),
         {
           allowed:
             true,

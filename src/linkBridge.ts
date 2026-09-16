@@ -2,6 +2,10 @@
 // WEB PAGE -> EXTENSION TOKEN BRIDGE
 // --------------------------------------------------
 
+import {
+  APP_BASE_URL
+} from "./extensionConfig.js";
+
 window.addEventListener(
   "message",
   async (
@@ -16,7 +20,7 @@ window.addEventListener(
 
     if (
       event.origin !==
-      "https://accountability-tracker-eosin.vercel.app"
+      APP_BASE_URL
     ) {
       return;
     }

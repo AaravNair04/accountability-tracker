@@ -117,8 +117,7 @@ export async function POST(
       );
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `report:generate:${user.id}`,
         limit:

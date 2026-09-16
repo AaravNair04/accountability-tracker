@@ -150,8 +150,7 @@ export async function GET(
       );
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `export:${user.id}`,
         limit:

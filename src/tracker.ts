@@ -2,6 +2,10 @@ import {
   setTrackedSites
 } from "./utils.js";
 
+import {
+  APP_BASE_URL
+} from "./extensionConfig.js";
+
 
 type SessionState = {
   id: string;
@@ -60,13 +64,13 @@ const TRACKING_PAUSED_KEY =
   "trackingPaused";
 
 const API_URL =
-  "https://accountability-tracker-eosin.vercel.app/api/usage-sessions";
+  `${APP_BASE_URL}/api/usage-sessions`;
 
 const HEARTBEAT_URL =
-  "https://accountability-tracker-eosin.vercel.app/api/devices/heartbeat"
+  `${APP_BASE_URL}/api/devices/heartbeat`;
 
 const TRACKED_SITES_URL =
-  "https://accountability-tracker-eosin.vercel.app/api/tracked-sites";
+  `${APP_BASE_URL}/api/tracked-sites`;
 
 let activeSession:
   SessionState | null =

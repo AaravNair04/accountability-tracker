@@ -1,3 +1,7 @@
+import {
+  APP_BASE_URL
+} from "../extensionConfig.js";
+
 const deviceStatus =
   document.getElementById(
     "deviceStatus"
@@ -431,7 +435,7 @@ linkDeviceButton.addEventListener(
 
       await chrome.tabs.create({
         url:
-          "https://accountability-tracker-eosin.vercel.app/devices/link"
+          `${APP_BASE_URL}/devices/link`
       });
 
 

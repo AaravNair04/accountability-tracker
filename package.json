@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "generate:extension-config": "node scripts/generate-extension-config.mjs",
+    "build": "node scripts/generate-extension-config.mjs && tsc",
     "watch": "tsc --watch"
   },
   "keywords": [],

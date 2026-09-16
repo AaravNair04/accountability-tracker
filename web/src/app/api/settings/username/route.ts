@@ -51,8 +51,7 @@ export async function POST(
       );
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `settings:username:${user.id}`,
         limit:

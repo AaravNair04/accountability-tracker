@@ -17,6 +17,7 @@
     "src/lib/trackedSiteRules.ts",
     "src/lib/dataRetentionRules.ts",
     "src/lib/rateLimit.ts",
+    "src/lib/security/accessControl.ts",
     "tests/**/*.test.ts"
   ]
 }

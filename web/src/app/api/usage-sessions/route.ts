@@ -17,6 +17,10 @@ import {
 } from "@/lib/rateLimit";
 
 import {
+  resolvePermittedSourceDeviceId
+} from "@/lib/security/accessControl";
+
+import {
   createClient
 } from "@/lib/supabase/server";
 
@@ -153,8 +157,7 @@ export async function POST(
       );
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `usage-session:create:${identity.authenticatedDeviceId}`,
         limit:
@@ -361,14 +364,17 @@ export async function POST(
       The historical source device is accepted only
       if it belongs to that same user.
     */
-    let sourceDeviceId =
-      identity
-        .authenticatedDeviceId;
+    let requestedSourceDevice:
+      {
+        id: string;
+        userId: string;
+      } | null =
+        null;
 
     if (
       requestedSourceDeviceId
     ) {
-      const sourceDevice =
+      requestedSourceDevice =
         await prisma.device.findUnique({
           where: {
             id:
@@ -383,26 +389,32 @@ export async function POST(
               true
           }
         });
+    }
 
-      if (
-        !sourceDevice ||
-        sourceDevice.userId !==
-          identity.userId
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              "Invalid source device."
-          },
-          {
-            status:
-              403
-          }
-        );
-      }
+    const sourceDeviceId =
+      resolvePermittedSourceDeviceId({
+        authenticatedUserId:
+          identity.userId,
 
-      sourceDeviceId =
-        sourceDevice.id;
+        authenticatedDeviceId:
+          identity.authenticatedDeviceId,
+
+        requestedSourceDevice
+      });
+
+    if (
+      !sourceDeviceId
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid source device."
+        },
+        {
+          status:
+            403
+        }
+      );
     }
 
     const existingSession =

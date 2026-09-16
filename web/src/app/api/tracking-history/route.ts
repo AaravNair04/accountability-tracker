@@ -48,8 +48,7 @@ export async function DELETE() {
       );
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `tracking-history:delete:${userId}`,
         limit:

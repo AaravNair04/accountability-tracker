@@ -11,6 +11,9 @@ import {
   checkRateLimit,
   rateLimitResponse
 } from "@/lib/rateLimit";
+import {
+  canRespondToPeerInvitation
+} from "@/lib/security/accessControl";
 import { createClient } from "@/lib/supabase/server";
 
 
@@ -45,8 +48,7 @@ export async function POST(
 
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `peer:respond:${user.id}`,
         limit:
@@ -171,9 +173,12 @@ export async function POST(
 
     // Only pending invitations can be answered.
     if (
-      invitation.revokedAt ||
-      invitation.status !==
-        "pending"
+      !canRespondToPeerInvitation({
+        userId:
+          user.id,
+
+        invitation
+      })
     ) {
 
       return NextResponse.json(

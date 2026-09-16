@@ -5,6 +5,9 @@ import {
   checkRateLimit,
   rateLimitResponse
 } from "@/lib/rateLimit";
+import {
+  canSubmitReportResponse
+} from "@/lib/security/accessControl";
 import { createClient } from "@/lib/supabase/server";
 
 
@@ -43,8 +46,7 @@ export async function POST(
 
     }
 
-    const rateLimit =
-      checkRateLimit({
+    const rateLimit = await checkRateLimit({
         key:
           `report-response:create:${user.id}`,
         limit:
@@ -300,6 +302,30 @@ export async function POST(
         }
       );
 
+    }
+
+    if (
+      !canSubmitReportResponse({
+        userId:
+          user.id,
+
+        report,
+
+        relationship,
+
+        delivery
+      })
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "You are not allowed to respond to this report."
+        },
+        {
+          status:
+            403
+        }
+      );
     }
 
 

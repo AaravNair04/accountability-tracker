@@ -3,27 +3,22 @@
   "name": "Accountability Tracker",
   "version": "0.1.0",
   "description": "Tracks active usage of selected websites.",
-
   "permissions": [
     "tabs",
     "storage",
     "alarms"
   ],
-
   "host_permissions": [
     "https://accountability-tracker-eosin.vercel.app/*"
   ],
-
   "background": {
     "service_worker": "dist/background.js",
     "type": "module"
   },
-
   "action": {
     "default_title": "Accountability Tracker",
     "default_popup": "src/popup/popup.html"
   },
-
   "content_scripts": [
     {
       "matches": [

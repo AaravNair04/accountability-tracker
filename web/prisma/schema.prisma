@@ -90,6 +90,8 @@ model UsageSession {
   user            User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([userId, startTime])
+  @@index([userId, endTime])
   @@index([deviceId])
   @@map("usage_sessions")
 }
@@ -164,6 +166,7 @@ model ReportDelivery {
 
   @@unique([reportId, peerId])
   @@index([peerId])
+  @@index([peerId, createdAt])
   @@index([reportId])
   @@index([emailSentAt])
   @@map("report_deliveries")
@@ -184,4 +187,15 @@ model ReportResponse {
   @@index([reportId])
   @@index([peerId])
   @@map("report_responses")
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+  @@map("rate_limit_buckets")
 }
