@@ -20,6 +20,10 @@ import {
   sendReportDeliveryEmail
 } from "@/lib/reports/reportDeliveryEmail";
 
+import {
+  reportEmailDeliveryEnabled
+} from "@/lib/reports/reportEmailSettings";
+
 
 export async function POST(
   request: NextRequest
@@ -46,6 +50,21 @@ export async function POST(
         {
           status:
             401
+        }
+      );
+    }
+
+    if (
+      !reportEmailDeliveryEnabled()
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Peer report email sending is paused for now."
+        },
+        {
+          status:
+            409
         }
       );
     }

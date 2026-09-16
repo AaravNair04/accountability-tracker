@@ -40,9 +40,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 Report-ready peer emails use the Resend HTTP API. Add these environment variables in Vercel:
 
 ```bash
+REPORT_EMAIL_DELIVERY_ENABLED=true
 RESEND_API_KEY=...
 REPORT_EMAIL_FROM="Accountability Tracker <reports@your-domain.com>"
 NEXT_PUBLIC_APP_URL="https://your-production-url"
 ```
 
-If the Resend variables are missing, report generation still succeeds and email delivery is skipped.
+Email delivery is disabled unless `REPORT_EMAIL_DELIVERY_ENABLED` is set to `true`. If email delivery is disabled or the Resend variables are missing, report generation still succeeds and email delivery is skipped.

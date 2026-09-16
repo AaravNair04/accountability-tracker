@@ -4,7 +4,6 @@ import {
 
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
-import RetryReportEmailsButton from "./RetryReportEmailsButton";
 import {
   SiteUsageBreakdown,
   TrackingIntegrityBreakdown,
@@ -227,24 +226,6 @@ export default async function ReportsPage() {
                         siteUsage
                       );
 
-                    const unsentDeliveries =
-                      report.deliveries.filter(
-                        (delivery) =>
-                          !delivery.emailSentAt
-                      );
-
-                    const failedDeliveries =
-                      report.deliveries.filter(
-                        (delivery) =>
-                          delivery.emailFailedAt
-                      );
-
-                    const sentDeliveries =
-                      report.deliveries.filter(
-                        (delivery) =>
-                          delivery.emailSentAt
-                      );
-
                     return (
                       <article
                         id={
@@ -411,70 +392,31 @@ export default async function ReportsPage() {
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                               <h3 className="font-semibold text-slate-950 dark:text-white">
-                                Peer email delivery
+                                Peer sharing
                               </h3>
 
                               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                                 {
                                   report.deliveries.length ===
                                     0
-                                    ? "This report has not been delivered to peers."
-                                    : `${sentDeliveries.length} sent, ${unsentDeliveries.length} pending or failed.`
+                                    ? "This report has not been shared with peers yet."
+                                    : `${report.deliveries.length} peer report link${report.deliveries.length === 1 ? "" : "s"} created. Email sending is paused for now.`
                                 }
                               </p>
                             </div>
-
-                            {
-                              unsentDeliveries.length >
-                                0 && (
-                                <RetryReportEmailsButton
-                                  reportId={report.id}
-                                  unsentCount={
-                                    unsentDeliveries.length
-                                  }
-                                />
-                              )
-                            }
                           </div>
 
                           {
-                            failedDeliveries.length >
+                            report.deliveries.length >
                               0 && (
-                              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-950/40 dark:text-red-200">
+                              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
                                 <p className="font-semibold">
-                                  {
-                                    failedDeliveries.length
-                                  }{" "}
-                                  email {
-                                    failedDeliveries.length ===
-                                      1
-                                      ? "failed"
-                                      : "failures"
-                                  }
+                                  Email notifications are turned off
                                 </p>
 
-                                <ul className="mt-2 space-y-1">
-                                  {
-                                    failedDeliveries.map(
-                                      (delivery) => {
-                                        const peerName =
-                                          getUserDisplayName(
-                                            delivery.peer
-                                          );
-
-                                        return (
-                                          <li key={delivery.id}>
-                                            {peerName}:{" "}
-                                            {
-                                              delivery.emailFailureReason ??
-                                              "Email send failed."
-                                            }
-                                          </li>
-                                        );
-                                      }
-                                    )
-                                  }
-                                </ul>
+                                <p className="mt-1">
+                                  Peers can still see shared reports in their report inbox. Resend retries are disabled until a verified sending domain is added.
+                                </p>
                               </div>
                             )
                           }

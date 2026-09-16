@@ -6,6 +6,11 @@ import {
   sendReportReadyEmail
 } from "@/lib/email";
 
+import {
+  REPORT_EMAILS_PAUSED_REASON,
+  reportEmailDeliveryEnabled
+} from "@/lib/reports/reportEmailSettings";
+
 
 export async function sendReportDeliveryEmail(
   deliveryId: string
@@ -69,6 +74,64 @@ export async function sendReportDeliveryEmail(
         true,
 
       alreadySent:
+        true
+    };
+  }
+
+  if (
+    !reportEmailDeliveryEnabled()
+  ) {
+    if (
+      delivery.emailSkippedAt &&
+      delivery.emailFailureReason ===
+        REPORT_EMAILS_PAUSED_REASON
+    ) {
+      return {
+        sent:
+          false,
+
+        skipped:
+          true,
+
+        alreadySent:
+          false,
+
+        alreadySkipped:
+          true
+      };
+    }
+
+    const emailAttemptedAt =
+      new Date();
+
+    await prisma.reportDelivery.update({
+      where: {
+        id:
+          delivery.id
+      },
+
+      data: {
+        emailAttemptedAt,
+        emailSkippedAt:
+          emailAttemptedAt,
+        emailFailedAt:
+          null,
+        emailFailureReason:
+          REPORT_EMAILS_PAUSED_REASON
+      }
+    });
+
+    return {
+      sent:
+        false,
+
+      skipped:
+        true,
+
+      alreadySent:
+        false,
+
+      paused:
         true
     };
   }
