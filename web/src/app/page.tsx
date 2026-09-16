@@ -556,91 +556,6 @@ export default async function Home() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Today&apos;s total
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
-            {
-              formatDuration(
-                totalSeconds
-              )
-            }
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            All tracked activity
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Active time
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-emerald-600 dark:text-emerald-300">
-            {
-              formatDuration(
-                activeSeconds
-              )
-            }
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Focused foreground use
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Distractions
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-red-600 dark:text-red-300">
-            {shortActiveDistractionCount}
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Short active bursts
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Tracking status
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
-            {current.status}
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {
-              current.device
-                ? current.device.name
-                : "No linked device"
-            }
-          </p>
-        </div>
-
-        <div className="app-card">
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Needs attention
-          </p>
-
-          <p className="mt-3 text-2xl font-bold text-indigo-600 dark:text-indigo-300">
-            {notificationCount}
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Peer and report updates
-          </p>
-        </div>
-      </section>
-
-
       {/* ACCOUNTABILITY */}
 
       <section className="space-y-4">
@@ -730,6 +645,90 @@ export default async function Home() {
                 </div>
               )
           }
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Today&apos;s total
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+            {
+              formatDuration(
+                totalSeconds
+              )
+            }
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            All tracked activity
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Active time
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-emerald-600 dark:text-emerald-300">
+            {
+              formatDuration(
+                activeSeconds
+              )
+            }
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Focused foreground use
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Distractions
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-red-600 dark:text-red-300">
+            {shortActiveDistractionCount}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Short active bursts
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Tracking status
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+            {current.status}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {
+              current.device
+                ? current.device.name
+                : "No linked device"
+            }
+          </p>
+        </div>
+
+        <div className="app-card">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Needs attention
+          </p>
+
+          <p className="mt-3 text-2xl font-bold text-indigo-600 dark:text-indigo-300">
+            {notificationCount}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Peer and report updates
+          </p>
         </div>
       </section>
 
