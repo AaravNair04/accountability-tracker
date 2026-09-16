@@ -7,7 +7,7 @@ import {
 
 import ThemeToggle from "./ThemeToggle";
 import ProfileMenu from "./ProfileMenu";
-import MoreMenu from "./MoreMenu";
+import MobileNavigationMenu from "./MobileNavigationMenu";
 import ToastViewport from "./ToastViewport";
 
 
@@ -56,17 +56,6 @@ const navigationItems = [
   }
 ];
 
-const mobilePrimaryNavigationItems =
-  navigationItems.slice(
-    0,
-    3
-  );
-
-const mobileMoreNavigationItems =
-  navigationItems.slice(
-    3
-  );
-
 const footerLinks = [
   {
     href:
@@ -87,6 +76,13 @@ const footerLinks = [
       "FAQs"
   }
 ];
+
+const mobileMainNavigationItems =
+  navigationItems.filter(
+    (item) =>
+      item.href !==
+      "/settings"
+  );
 
 
 function isActiveRoute(
@@ -139,7 +135,14 @@ export default function AppChrome({
 
               {
                 !isAuthRoute && (
-                  <ProfileMenu />
+                  <MobileNavigationMenu
+                    mainItems={
+                      mobileMainNavigationItems
+                    }
+                    accountItems={
+                      footerLinks
+                    }
+                  />
                 )
               }
             </div>
@@ -148,53 +151,6 @@ export default function AppChrome({
           {
             !isAuthRoute && (
               <>
-                <nav
-                  aria-label="Primary navigation"
-                  className="flex items-center gap-1 lg:hidden"
-                >
-                  {
-                    mobilePrimaryNavigationItems.map(
-                      (item) => {
-                        const isActive =
-                          isActiveRoute(
-                            pathname,
-                            item.href
-                          );
-
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            aria-current={
-                              isActive
-                                ? "page"
-                                : undefined
-                            }
-                            className={
-                              [
-                                "whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold no-underline transition-colors",
-                                isActive
-                                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200"
-                                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-                              ].join(
-                                " "
-                              )
-                            }
-                          >
-                            {item.label}
-                          </Link>
-                        );
-                      }
-                    )
-                  }
-
-                  <MoreMenu
-                    items={
-                      mobileMoreNavigationItems
-                    }
-                  />
-                </nav>
-
                 <nav
                   aria-label="Primary navigation"
                   className="hidden gap-1 lg:flex"
