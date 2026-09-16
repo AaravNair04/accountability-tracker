@@ -644,22 +644,9 @@ export default async function Home() {
       {/* ACCOUNTABILITY */}
 
       <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="app-section-title">
-            Accountability
-          </h2>
-
-          <Link
-            href="/reports/peers"
-            className="app-button-primary inline-flex items-center gap-2 self-start no-underline sm:self-auto"
-          >
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
-            </span>
-            Live Feed
-          </Link>
-        </div>
+        <h2 className="app-section-title">
+          Accountability
+        </h2>
 
         <div className="app-card">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -727,8 +714,12 @@ export default async function Home() {
                               href={
                                 `/peers/view/${relationship.owner.id}`
                               }
-                              className="app-button-secondary inline-flex justify-center no-underline"
+                              className="app-button-secondary inline-flex items-center justify-center gap-2 no-underline"
                             >
+                              <span className="relative flex h-3 w-3">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
+                              </span>
                               View accountability
                             </Link>
                           </div>
