@@ -67,6 +67,27 @@ const mobileMoreNavigationItems =
     3
   );
 
+const footerLinks = [
+  {
+    href:
+      "/profile",
+    label:
+      "Profile"
+  },
+  {
+    href:
+      "/settings",
+    label:
+      "Settings"
+  },
+  {
+    href:
+      "/faqs",
+    label:
+      "FAQs"
+  }
+];
+
 
 function isActiveRoute(
   pathname: string,
@@ -102,7 +123,7 @@ export default function AppChrome({
     );
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center justify-between gap-3">
@@ -230,7 +251,74 @@ export default function AppChrome({
         </div>
       </header>
 
-      {children}
+      <div className="flex-1">
+        {children}
+      </div>
+
+      {
+        !isAuthRoute && (
+          <footer className="border-t border-slate-200 bg-white/70 dark:border-slate-800 dark:bg-slate-950/70">
+            <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+              <div>
+                <p className="text-sm font-bold text-slate-950 dark:text-white">
+                  Accountability Tracker
+                </p>
+
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Private by default. Built for accountable focus.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 md:items-end">
+                <nav
+                  aria-label="Footer navigation"
+                  className="flex flex-wrap gap-x-4 gap-y-2"
+                >
+                  {
+                    footerLinks.map(
+                      (item) => {
+                        const isActive =
+                          isActiveRoute(
+                            pathname,
+                            item.href
+                          );
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            aria-current={
+                              isActive
+                                ? "page"
+                                : undefined
+                            }
+                            className={
+                              [
+                                "text-sm font-semibold no-underline",
+                                isActive
+                                  ? "text-indigo-700 dark:text-indigo-200"
+                                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                              ].join(
+                                " "
+                              )
+                            }
+                          >
+                            {item.label}
+                          </Link>
+                        );
+                      }
+                    )
+                  }
+                </nav>
+
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  &copy; 2026 Accountability Tracker
+                </p>
+              </div>
+            </div>
+          </footer>
+        )
+      }
 
       <ToastViewport />
     </div>
