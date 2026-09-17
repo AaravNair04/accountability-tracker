@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import AppChrome from "@/components/AppChrome";
+import {
+  getNotificationCount
+} from "@/lib/notifications";
+import {
+  createClient
+} from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Accountability Tracker",
@@ -20,11 +26,28 @@ const themeScript = `
   })();
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase =
+    await createClient();
+
+  const {
+    data: {
+      user
+    }
+  } =
+    await supabase.auth.getUser();
+
+  const notificationCount =
+    user
+      ? await getNotificationCount(
+          user.id
+        )
+      : 0;
+
   return (
     <html
       lang="en"
@@ -39,7 +62,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AppChrome>
+        <AppChrome notificationCount={notificationCount}>
           {children}
         </AppChrome>
       </body>

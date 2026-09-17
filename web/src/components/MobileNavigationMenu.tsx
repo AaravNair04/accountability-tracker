@@ -28,6 +28,7 @@ type MobileNavigationItem = {
 type MobileNavigationMenuProps = {
   mainItems: MobileNavigationItem[];
   accountItems: MobileNavigationItem[];
+  notificationCount: number;
 };
 
 function isActiveRoute(
@@ -51,7 +52,8 @@ function isActiveRoute(
 
 export default function MobileNavigationMenu({
   mainItems,
-  accountItems
+  accountItems,
+  notificationCount
 }: MobileNavigationMenuProps) {
   const [open, setOpen] =
     useState(false);
@@ -77,6 +79,16 @@ export default function MobileNavigationMenu({
 
   const router =
     useRouter();
+
+  const hasNotifications =
+    notificationCount > 0;
+
+  const notificationBadgeLabel =
+    notificationCount > 99
+      ? "99+"
+      : String(
+          notificationCount
+        );
 
   useEffect(
     () => {
@@ -209,6 +221,12 @@ export default function MobileNavigationMenu({
             pathname,
             item.href
           );
+        const isNotificationsItem =
+          item.href ===
+          "/notifications";
+        const shouldShowNotificationBadge =
+          isNotificationsItem &&
+          hasNotifications;
 
         return (
           <Link
@@ -219,6 +237,11 @@ export default function MobileNavigationMenu({
                 ? "page"
                 : undefined
             }
+            aria-label={
+              shouldShowNotificationBadge
+                ? `Notifications, ${notificationCount} unread`
+                : undefined
+            }
             onClick={
               () =>
                 setOpen(
@@ -227,9 +250,14 @@ export default function MobileNavigationMenu({
             }
             className={
               [
-                "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-colors",
+                "relative flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-colors",
+                shouldShowNotificationBadge
+                  ? "pr-10"
+                  : "",
                 isActive
                   ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200"
+                  : shouldShowNotificationBadge
+                    ? "bg-indigo-50 text-indigo-800 hover:bg-indigo-100 hover:text-indigo-900 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/15 dark:hover:text-white"
                   : "text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
               ].join(
                 " "
@@ -237,6 +265,16 @@ export default function MobileNavigationMenu({
             }
           >
             {item.label}
+            {
+              shouldShowNotificationBadge && (
+                <span
+                  aria-hidden="true"
+                  className="absolute right-2 top-1 flex min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[0.625rem] font-bold leading-5 text-white ring-2 ring-white dark:bg-indigo-300 dark:text-slate-950 dark:ring-slate-900"
+                >
+                  {notificationBadgeLabel}
+                </span>
+              )
+            }
           </Link>
         );
       }
@@ -261,9 +299,28 @@ export default function MobileNavigationMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+        className={
+          [
+            "relative inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
+            hasNotifications
+              ? "border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/15"
+              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          ].join(
+            " "
+          )
+        }
       >
         {open ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
+        {
+          hasNotifications && (
+            <span
+              aria-hidden="true"
+              className="absolute right-0 top-0 flex min-w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[0.625rem] font-bold leading-5 text-white ring-2 ring-white dark:bg-indigo-300 dark:text-slate-950 dark:ring-slate-950"
+            >
+              {notificationBadgeLabel}
+            </span>
+          )
+        }
       </button>
 
       {
