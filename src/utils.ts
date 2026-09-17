@@ -1,6 +1,12 @@
 type TrackedSiteConfig = {
   hostname: string;
   site: string;
+  excludedHostnames?: string[];
+};
+
+type TrackedSiteRule = {
+  site: string;
+  excludedHostnames: Set<string>;
 };
 
 
@@ -16,7 +22,12 @@ const DEFAULT_TRACKED_SITES:
           "youtube.com",
 
         site:
-          "youtube"
+          "youtube",
+
+        excludedHostnames:
+          [
+            "music.youtube.com"
+          ]
       },
       {
         hostname:
@@ -58,7 +69,7 @@ function createTrackedSiteMap(
   configs: TrackedSiteConfig[]
 ) {
   const siteMap =
-    new Map<string, string>();
+    new Map<string, TrackedSiteRule>();
 
   for (
     const config
@@ -78,7 +89,23 @@ function createTrackedSiteMap(
     ) {
       siteMap.set(
         hostname,
-        site
+        {
+          site,
+
+          excludedHostnames:
+            new Set(
+              (
+                config.excludedHostnames ??
+                []
+              )
+                .map(
+                  normalizeHostname
+                )
+                .filter(
+                  Boolean
+                )
+            )
+        }
       );
     }
   }
@@ -127,7 +154,18 @@ function parseTrackedSites(
           maybeConfig.hostname,
 
         site:
-          maybeConfig.site
+          maybeConfig.site,
+
+        excludedHostnames:
+          Array.isArray(
+            maybeConfig.excludedHostnames
+          )
+            ? maybeConfig.excludedHostnames.filter(
+                (hostname) =>
+                  typeof hostname ===
+                  "string"
+              )
+            : undefined
       });
     }
   }
@@ -174,7 +212,15 @@ export async function setTrackedSites(
           ),
 
         site:
-          config.site.trim()
+          config.site.trim(),
+
+        excludedHostnames:
+          (
+            config.excludedHostnames ??
+            []
+          ).map(
+            normalizeHostname
+          )
       })
     );
 
@@ -187,6 +233,18 @@ export async function setTrackedSites(
     [TRACKED_SITES_KEY]:
       safeConfigs
   });
+}
+
+
+function hostnameMatches(
+  hostname: string,
+  pattern: string
+) {
+  return hostname ===
+    pattern ||
+    hostname.endsWith(
+      `.${pattern}`
+    );
 }
 
 
@@ -207,18 +265,35 @@ export function getTrackedSite(
         parsedUrl.hostname
       );
 
+    const originalHostname =
+      hostname;
+
     while (
       hostname
     ) {
-      const site =
+      const rule =
         trackedSites.get(
           hostname
         );
 
       if (
-        site
+        rule
       ) {
-        return site;
+        for (
+          const excludedHostname
+          of rule.excludedHostnames
+        ) {
+          if (
+            hostnameMatches(
+              originalHostname,
+              excludedHostname
+            )
+          ) {
+            return null;
+          }
+        }
+
+        return rule.site;
       }
 
       const nextDotIndex =

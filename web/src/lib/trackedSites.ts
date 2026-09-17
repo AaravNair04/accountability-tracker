@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 export {
   DEFAULT_TRACKED_SITES,
+  getTrackedSiteExcludedHostnames,
   isValidHostname,
   normalizeHostname,
   siteKeyFromHostname

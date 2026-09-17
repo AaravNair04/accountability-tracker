@@ -18,6 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import {
   getEnabledTrackedSites,
+  getTrackedSiteExcludedHostnames,
   isValidHostname,
   normalizeHostname,
   siteKeyFromHostname
@@ -120,7 +121,12 @@ function serializeTrackedSite(
       trackedSite.hostname,
 
     enabled:
-      trackedSite.enabled
+      trackedSite.enabled,
+
+    excludedHostnames:
+      getTrackedSiteExcludedHostnames(
+        trackedSite.hostname
+      )
   };
 }
 

@@ -34,6 +34,7 @@ type TrackedSitesApiResponse = {
   trackedSites?: {
     hostname?: unknown;
     site?: unknown;
+    excludedHostnames?: unknown;
   }[];
 };
 
@@ -1102,7 +1103,18 @@ export async function refreshTrackedSites(
                     trackedSite.hostname,
 
                   site:
-                    trackedSite.site
+                    trackedSite.site,
+
+                  excludedHostnames:
+                    Array.isArray(
+                      trackedSite.excludedHostnames
+                    )
+                      ? trackedSite.excludedHostnames.filter(
+                          (hostname) =>
+                            typeof hostname ===
+                            "string"
+                        )
+                      : undefined
                 }
               ]
             : []

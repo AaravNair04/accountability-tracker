@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getTrackedSiteExcludedHostnames,
   isValidHostname,
   normalizeHostname,
   siteKeyFromHostname
@@ -23,6 +24,21 @@ test(
         "  www.youtube.com/watch?v=1  "
       ),
       "youtube.com"
+    );
+  }
+);
+
+
+test(
+  "excludes YouTube Music from the default YouTube rule",
+  () => {
+    assert.deepEqual(
+      getTrackedSiteExcludedHostnames(
+        "youtube.com"
+      ),
+      [
+        "music.youtube.com"
+      ]
     );
   }
 );

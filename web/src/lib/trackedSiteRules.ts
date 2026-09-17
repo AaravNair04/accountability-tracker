@@ -5,7 +5,12 @@ export const DEFAULT_TRACKED_SITES =
         "youtube.com",
 
       site:
-        "youtube"
+        "youtube",
+
+      excludedHostnames:
+        [
+          "music.youtube.com"
+        ]
     },
     {
       hostname:
@@ -22,6 +27,37 @@ export const DEFAULT_TRACKED_SITES =
         "netflix"
     }
   ] as const;
+
+
+export function getTrackedSiteExcludedHostnames(
+  hostname: string
+) {
+  const normalizedHostname =
+    normalizeHostname(
+      hostname
+    );
+
+  const defaultTrackedSite =
+    DEFAULT_TRACKED_SITES.find(
+      (trackedSite) =>
+        trackedSite.hostname ===
+        normalizedHostname
+    );
+
+  if (
+    !defaultTrackedSite ||
+    !(
+      "excludedHostnames" in
+      defaultTrackedSite
+    )
+  ) {
+    return [];
+  }
+
+  return [
+    ...defaultTrackedSite.excludedHostnames
+  ];
+}
 
 
 export function normalizeHostname(
