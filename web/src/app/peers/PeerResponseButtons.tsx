@@ -86,6 +86,12 @@ export default function PeerResponseButtons({
         "Invitation updated."
       );
 
+      window.dispatchEvent(
+        new Event(
+          "accountability:notifications-changed"
+        )
+      );
+
 
       // Reload server-side peer data.
       router.refresh();

@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, Bell, ChartNoAxesCombined, Globe, LayoutDashboard, Monitor, Settings2, ShieldCheck, Users } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useState
+} from "react";
 
 import ThemeToggle from "./ThemeToggle";
 import ProfileMenu from "./ProfileMenu";
@@ -52,8 +57,176 @@ export default function AppChrome({
 }: AppChromeProps) {
   const pathname = usePathname();
   const isAuthRoute = pathname.startsWith("/auth");
+  const [
+    liveNotificationCount,
+    setLiveNotificationCount
+  ] =
+    useState(
+      notificationCount
+    );
   const hasNotifications =
-    notificationCount > 0;
+    liveNotificationCount > 0;
+
+  const fetchNotificationCount =
+    useCallback(
+      async (
+        signal?: AbortSignal
+      ) => {
+        if (
+          isAuthRoute
+        ) {
+          return 0;
+        }
+
+        try {
+          const response =
+            await fetch(
+              "/api/notifications/count",
+              {
+                cache:
+                  "no-store",
+                signal
+              }
+            );
+
+          const data =
+            await response.json() as {
+              count?: unknown;
+            };
+
+          if (
+            typeof data.count ===
+              "number"
+          ) {
+            return data.count;
+          }
+        } catch (error) {
+          if (
+            error instanceof DOMException &&
+            error.name ===
+              "AbortError"
+          ) {
+            return null;
+          }
+
+          console.error(
+            "Failed to refresh notification count:",
+            error
+          );
+        }
+
+        return null;
+      },
+      [
+        isAuthRoute
+      ]
+    );
+
+  const refreshNotificationCount =
+    useCallback(
+      async () => {
+        const nextCount =
+          await fetchNotificationCount();
+
+        if (
+          nextCount !==
+          null
+        ) {
+          setLiveNotificationCount(
+            nextCount
+          );
+        }
+      },
+      [
+        fetchNotificationCount
+      ]
+    );
+
+  useEffect(
+    () => {
+      const controller =
+        new AbortController();
+
+      async function updateNotificationCount() {
+        const nextCount =
+          await fetchNotificationCount(
+            controller.signal
+          );
+
+        if (
+          !controller.signal.aborted &&
+          nextCount !==
+            null
+        ) {
+          setLiveNotificationCount(
+            nextCount
+          );
+        }
+      }
+
+      void updateNotificationCount();
+
+      return () => {
+        controller.abort();
+      };
+    },
+    [
+      pathname,
+      fetchNotificationCount
+    ]
+  );
+
+  useEffect(
+    () => {
+      function handleNotificationsChanged() {
+        void refreshNotificationCount();
+      }
+
+      function handleFocus() {
+        void refreshNotificationCount();
+      }
+
+      function handleVisibilityChange() {
+        if (
+          document.visibilityState ===
+          "visible"
+        ) {
+          void refreshNotificationCount();
+        }
+      }
+
+      window.addEventListener(
+        "accountability:notifications-changed",
+        handleNotificationsChanged
+      );
+      window.addEventListener(
+        "focus",
+        handleFocus
+      );
+      document.addEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+
+      return () => {
+        window.removeEventListener(
+          "accountability:notifications-changed",
+          handleNotificationsChanged
+        );
+        window.removeEventListener(
+          "focus",
+          handleFocus
+        );
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
+      };
+    },
+    [
+      refreshNotificationCount
+    ]
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -69,7 +242,7 @@ export default function AppChrome({
             </Link>
             <div className="flex shrink-0 items-center gap-2 lg:hidden">
               <ThemeToggle />
-              {!isAuthRoute && <MobileNavigationMenu mainItems={mobileMainNavigationItems} accountItems={footerLinks} notificationCount={notificationCount} />}
+              {!isAuthRoute && <MobileNavigationMenu mainItems={mobileMainNavigationItems} accountItems={footerLinks} notificationCount={liveNotificationCount} />}
             </div>
           </div>
 
@@ -91,7 +264,7 @@ export default function AppChrome({
 
                 return (
                   <Link key={item.href} href={item.href} aria-current={isActive ? "page" : undefined}
-                    aria-label={shouldHighlightNotifications ? `Notifications, ${notificationCount} unread` : undefined}
+                    aria-label={shouldHighlightNotifications ? `Notifications, ${liveNotificationCount} unread` : undefined}
                     className={`relative flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium no-underline transition-colors hover:no-underline ${shouldHighlightNotifications ? "pr-8" : ""} ${isActive
                       ? "border-indigo-600 text-indigo-700 dark:border-indigo-300 dark:text-indigo-200"
                       : shouldHighlightNotifications
@@ -104,7 +277,7 @@ export default function AppChrome({
                         aria-hidden="true"
                         className="absolute right-1 top-1 flex min-w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[0.625rem] font-bold leading-5 text-white ring-2 ring-white dark:bg-indigo-300 dark:text-slate-950 dark:ring-slate-950"
                       >
-                        {formatNotificationCount(notificationCount)}
+                        {formatNotificationCount(liveNotificationCount)}
                       </span>
                     )}
                   </Link>

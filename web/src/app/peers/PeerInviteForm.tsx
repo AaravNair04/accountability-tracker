@@ -102,6 +102,12 @@ export default function PeerInviteForm() {
 
       setPeerIdentifier("");
 
+      window.dispatchEvent(
+        new Event(
+          "accountability:notifications-changed"
+        )
+      );
+
 
       // Refresh server data.
       router.refresh();
