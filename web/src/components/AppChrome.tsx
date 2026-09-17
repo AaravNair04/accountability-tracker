@@ -31,9 +31,29 @@ function isActiveRoute(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function AppChrome({ children }: { children: React.ReactNode }) {
+function formatNotificationCount(
+  count: number
+) {
+  return count > 99
+    ? "99+"
+    : String(
+        count
+      );
+}
+
+type AppChromeProps = {
+  children: React.ReactNode;
+  notificationCount: number;
+};
+
+export default function AppChrome({
+  children,
+  notificationCount
+}: AppChromeProps) {
   const pathname = usePathname();
   const isAuthRoute = pathname.startsWith("/auth");
+  const hasNotifications =
+    notificationCount > 0;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -49,7 +69,7 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
             </Link>
             <div className="flex shrink-0 items-center gap-2 lg:hidden">
               <ThemeToggle />
-              {!isAuthRoute && <MobileNavigationMenu mainItems={mobileMainNavigationItems} accountItems={footerLinks} />}
+              {!isAuthRoute && <MobileNavigationMenu mainItems={mobileMainNavigationItems} accountItems={footerLinks} notificationCount={notificationCount} />}
             </div>
           </div>
 
@@ -62,13 +82,31 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
             <nav aria-label="Primary navigation" className="col-span-2 hidden gap-1 border-t border-slate-100 pt-1 lg:flex dark:border-slate-800">
               {navigationItems.map((item) => {
                 const isActive = isActiveRoute(pathname, item.href);
+                const isNotificationsItem =
+                  item.href ===
+                  "/notifications";
+                const shouldHighlightNotifications =
+                  isNotificationsItem &&
+                  hasNotifications;
+
                 return (
                   <Link key={item.href} href={item.href} aria-current={isActive ? "page" : undefined}
-                    className={`relative flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium no-underline transition-colors hover:no-underline ${isActive
+                    aria-label={shouldHighlightNotifications ? `Notifications, ${notificationCount} unread` : undefined}
+                    className={`relative flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium no-underline transition-colors hover:no-underline ${shouldHighlightNotifications ? "pr-8" : ""} ${isActive
                       ? "border-indigo-600 text-indigo-700 dark:border-indigo-300 dark:text-indigo-200"
+                      : shouldHighlightNotifications
+                        ? "border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 hover:text-indigo-900 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/15 dark:hover:text-white"
                       : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"}`}>
                     <item.icon aria-hidden="true" className="size-4" />
                     {item.label}
+                    {shouldHighlightNotifications && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute right-1 top-1 flex min-w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[0.625rem] font-bold leading-5 text-white ring-2 ring-white dark:bg-indigo-300 dark:text-slate-950 dark:ring-slate-950"
+                      >
+                        {formatNotificationCount(notificationCount)}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

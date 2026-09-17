@@ -12,6 +12,9 @@ import {
   prisma
 } from "@/lib/prisma";
 import {
+  getNotificationCount
+} from "@/lib/notifications";
+import {
   getUserDisplayName,
   getUserSecondaryLabel
 } from "@/lib/userDisplay";
@@ -233,77 +236,13 @@ export default async function Home() {
     });
 
   const [
-    unreadReportCount,
-    pendingInvitationCount,
-    newPeerResponseCount,
-    sentPendingInvitationCount,
+    notificationCount,
     accountabilityPeers
   ] =
     await Promise.all([
-      prisma.reportDelivery.count({
-        where: {
-          peerId:
-            user.id,
-
-          viewedAt:
-            null,
-
-          report: {
-            user: {
-              peerRelationships: {
-                some: {
-                  peerId:
-                    user.id,
-
-                  status:
-                    "accepted",
-
-                  revokedAt:
-                    null
-                }
-              }
-            }
-          }
-        }
-      }),
-
-      prisma.trustedPeer.count({
-        where: {
-          peerId:
-            user.id,
-
-          status:
-            "pending",
-
-          revokedAt:
-            null
-        }
-      }),
-
-      prisma.reportResponse.count({
-        where: {
-          ownerViewedAt:
-            null,
-
-          report: {
-            userId:
-              user.id
-          }
-        }
-      }),
-
-      prisma.trustedPeer.count({
-        where: {
-          ownerId:
-            user.id,
-
-          status:
-            "pending",
-
-          revokedAt:
-            null
-        }
-      }),
+      getNotificationCount(
+        user.id
+      ),
 
       prisma.trustedPeer.findMany({
         where: {
@@ -339,12 +278,6 @@ export default async function Home() {
           3
       })
     ]);
-
-  const notificationCount =
-    unreadReportCount +
-    pendingInvitationCount +
-    newPeerResponseCount +
-    sentPendingInvitationCount;
 
   const now =
     new Date();
